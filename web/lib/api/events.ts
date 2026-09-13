@@ -182,9 +182,30 @@ export function parseEnvelope(raw: string): Envelope | null {
   return envelopeFrom(data);
 }
 
-/** True only for a `run.outcome` carrying one of the four outcomes. A truncated one does not end a run. */
+const HEX_64 = /^[0-9a-f]{64}$/;
+const HEX_128 = /^[0-9a-f]{128}$/;
+
+/**
+ * Validates a `run.outcome` payload. A SUCCESS must carry the signed chain head it rests on, and
+ * a refusal must carry its remedy (AGENTS.md invariant 6). Anything else is rejected, so a
+ * truncated event can neither end a run nor produce a receipt.
+ */
+export function parseRunOutcome(payload: Record<string, unknown>): RunView["outcome"] {
+  const outcome = outcomeOf(str(payload, "outcome"));
+  if (outcome === null) return null;
+  const chainHead = str(payload, "chain_head");
+  const signature = str(payload, "signature");
+  const publicKey = str(payload, "public_key");
+  const remedy = str(payload, "remedy");
+  const signed = chainHead !== null && HEX_64.test(chainHead) && signature !== null && HEX_128.test(signature) && publicKey !== null && HEX_64.test(publicKey);
+  if (outcome === "SUCCESS" && !signed) return null;
+  if (outcome === "REFUSED" && !remedy) return null;
+  return { outcome, remedy, chainHead, signature, publicKey };
+}
+
+/** True only for a `run.outcome` that passes `parseRunOutcome`. A truncated one does not end a run. */
 export function isTerminalOutcome(envelope: Envelope): boolean {
-  return envelope.type === "run.outcome" && outcomeOf(str(envelope.payload, "outcome")) !== null;
+  return envelope.type === "run.outcome" && parseRunOutcome(envelope.payload) !== null;
 }
 
 export function initialRunView(runId: string): RunView {
@@ -357,19 +378,10 @@ export function reduceRun(view: RunView, event: Envelope): RunView {
       };
     }
     case "run.outcome": {
-      const outcome = outcomeOf(str(p, "outcome"));
-      // An outcome outside the four classes does not produce a receipt.
+      const outcome = parseRunOutcome(p);
+      // A truncated or invalid outcome does not produce a receipt.
       if (outcome === null) return { ...next, rejected: [...view.rejected, seen(event)] };
-      return {
-        ...next,
-        outcome: {
-          outcome,
-          remedy: str(p, "remedy"),
-          chainHead: str(p, "chain_head"),
-          signature: str(p, "signature"),
-          publicKey: str(p, "public_key"),
-        },
-      };
+      return { ...next, outcome };
     }
     default:
       return { ...next, unrecognized: [...view.unrecognized, seen(event)] };
@@ -385,6 +397,47 @@ export function foldEnvelopes(runId: string, envelopes: Iterable<Envelope>): Run
     .filter((e) => e.runId === runId)
     .sort((a, b) => a.seq - b.seq)
     .reduce(reduceRun, initialRunView(runId));
+}
+
+export const RECONCILED_APPS = ["stripe", "notion", "airtable"] as const;
+
+export type Agreement = {
+  /** The latest read-back per app, in RECONCILED_APPS order. */
+  readbacks: (Readback | undefined)[];
+  allReported: boolean;
+  allPriced: boolean;
+  agree: boolean;
+  allFresh: boolean;
+  /** Checks that failed or reported no result. */
+  failing: Invariant[];
+  invariantsOk: boolean;
+  value: { minorUnits: number; currency: string } | null;
+  /** Every app read back fresh, all values agree, and every check passed. */
+  proven: boolean;
+};
+
+/** What the read-backs and checks on this page actually prove, independent of the outcome the backend reports. */
+export function agreementOf(view: RunView): Agreement {
+  const byApp = new Map(view.readbacks.map((r) => [r.app, r]));
+  const readbacks = RECONCILED_APPS.map((app) => byApp.get(app));
+  const priced = readbacks.filter((r): r is Readback & { minorUnits: number; currency: string } => r !== undefined && r.minorUnits !== null && r.currency !== null);
+  const first = priced[0];
+  const allPriced = priced.length === RECONCILED_APPS.length;
+  const agree = allPriced && priced.every((r) => r.minorUnits === first.minorUnits && r.currency === first.currency);
+  const allFresh = readbacks.every((r) => r?.fresh === true);
+  const failing = view.invariants.filter((i) => i.ok !== true);
+  const invariantsOk = view.invariants.length > 0 && failing.length === 0;
+  return {
+    readbacks,
+    allReported: readbacks.every((r) => r !== undefined),
+    allPriced,
+    agree,
+    allFresh,
+    failing,
+    invariantsOk,
+    value: agree && first ? { minorUnits: first.minorUnits, currency: first.currency } : null,
+    proven: agree && allFresh && invariantsOk,
+  };
 }
 
 /** The chapter the UI should show, derived only from what the backend has reported so far. */

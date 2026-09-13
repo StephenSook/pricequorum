@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  agreementOf,
   currentChapter,
   envelopeFrom,
   foldEnvelopes,
@@ -12,6 +13,7 @@ import {
 } from "@/lib/api/events";
 
 const RUN = "3f7c1a52-0000-4000-8000-000000000001";
+const PROOF = { chain_head: "a".repeat(64), signature: "b".repeat(128), public_key: "c".repeat(64) };
 
 function envelope(seq: number, type: string, payload: Record<string, unknown>): Envelope {
   return { seq, runId: RUN, type, at: "2026-09-13T20:00:00Z", payload };
@@ -45,11 +47,33 @@ describe("parseEnvelope", () => {
 });
 
 describe("isTerminalOutcome", () => {
-  it("is true only for a run.outcome carrying one of the four outcomes", () => {
-    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "SUCCESS" }))).toBe(true);
+  it("ends a run only on a complete outcome: a signed SUCCESS or a refusal with its remedy", () => {
+    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "SUCCESS", ...PROOF }))).toBe(true);
+    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "REFUSED", remedy: "Ask the plan owner" }))).toBe(true);
+    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "NEEDS_HUMAN" }))).toBe(true);
+    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "SUCCESS" }))).toBe(false);
+    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "SUCCESS", ...PROOF, signature: "not-hex" }))).toBe(false);
+    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "REFUSED" }))).toBe(false);
     expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "DONE" }))).toBe(false);
-    expect(isTerminalOutcome(envelope(1, "run.outcome", {}))).toBe(false);
-    expect(isTerminalOutcome(envelope(1, "run.status", { outcome: "SUCCESS" }))).toBe(false);
+    expect(isTerminalOutcome(envelope(1, "run.status", { outcome: "SUCCESS", ...PROOF }))).toBe(false);
+  });
+});
+
+describe("agreementOf", () => {
+  const readback = (seq: number, app: string, minor: number, fresh = true) =>
+    envelope(seq, "readback.result", { app, value: { minor_units: minor, currency: "usd" }, fresh });
+
+  it("proves agreement only with three fresh equal read-backs and every check passing", () => {
+    const view = apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500), envelope(4, "invariant.result", { name: "prices_agree", ok: true }));
+    expect(agreementOf(view)).toMatchObject({ proven: true, value: { minorUnits: 2500, currency: "usd" } });
+  });
+
+  it("does not prove agreement with a stale read, a disagreement, a missing app or a check without a result", () => {
+    const check = envelope(9, "invariant.result", { name: "prices_agree", ok: true });
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, false), check)).proven).toBe(false);
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2400), readback(3, "airtable", 2500), check)).proven).toBe(false);
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), check)).proven).toBe(false);
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500), envelope(4, "invariant.result", { name: "x" }))).proven).toBe(false);
   });
 });
 
@@ -164,8 +188,8 @@ describe("reduceRun", () => {
     expect(currentChapter(view)).toBe("approve");
     view = reduceRun(view, envelope(3, "approval.decided", { decision: "APPROVED", approver_display: "Stephen" }));
     expect(view.approval).toMatchObject({ phase: "decided", decision: "APPROVED", summary: "Pro 20 to 25", mode: "slack" });
-    view = reduceRun(view, envelope(4, "run.outcome", { outcome: "SUCCESS", chain_head: "cc" }));
-    expect(view.outcome).toMatchObject({ outcome: "SUCCESS", chainHead: "cc" });
+    view = reduceRun(view, envelope(4, "run.outcome", { outcome: "SUCCESS", ...PROOF }));
+    expect(view.outcome).toMatchObject({ outcome: "SUCCESS", chainHead: PROOF.chain_head });
     expect(currentChapter(view)).toBe("receipt");
   });
 });
@@ -175,7 +199,7 @@ describe("foldEnvelopes", () => {
     const events = [
       envelope(1, "ledger.pending", { ledger_id: 7, step_no: 1, app: "stripe" }),
       envelope(2, "ledger.completed", { ledger_id: 7, entry_hash: "bb" }),
-      envelope(3, "run.outcome", { outcome: "SUCCESS" }),
+      envelope(3, "run.outcome", { outcome: "SUCCESS", ...PROOF }),
     ];
     const inOrder = foldEnvelopes(RUN, events);
     const interleaved = foldEnvelopes(RUN, [events[2], events[1], events[1], events[0], { ...events[0], runId: "other" }]);

@@ -54,6 +54,7 @@ export function useRunEvents(runId: string | null): { view: RunView | null; stre
     let cancelled = false;
     let opened = false;
     let finished = false;
+    let replayGeneration = 0;
 
     const finish = (reconcile: boolean) => {
       if (cancelled) return;
@@ -74,6 +75,7 @@ export function useRunEvents(runId: string | null): { view: RunView | null; stre
     };
 
     const replay = async () => {
+      const generation = ++replayGeneration;
       let body: unknown;
       try {
         const res = await fetch(`${base}/events.json`, { cache: "no-store", signal: AbortSignal.timeout(REPLAY_TIMEOUT_MS) });
@@ -89,7 +91,11 @@ export function useRunEvents(runId: string | null): { view: RunView | null; stre
       if (cancelled) return;
       const items: unknown[] = Array.isArray(body) ? body : [];
       const envelopes = items.map(envelopeFrom).filter((e): e is Envelope => e !== null && e.runId === runId);
-      setReplayInvalid({ runId, value: Array.isArray(body) ? items.length - envelopes.length : 1 });
+      // Envelopes from any replay merge by sequence number, but only the newest replay decides how
+      // many malformed entries the recorded history holds.
+      if (generation === replayGeneration) {
+        setReplayInvalid({ runId, value: Array.isArray(body) ? items.length - envelopes.length : 1 });
+      }
       absorb(envelopes, true);
     };
 
