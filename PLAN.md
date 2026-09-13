@@ -39,7 +39,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 
 | # | Component | File(s) | Owner | Status | Deps | Notes |
 |---|---|---|---|---|---|---|
-| 0.1 | Private repo, Tylin invited, planning files | `PLAN.md` `AGENTS.md` `*_TASKS.md` `docs/` | Stephen | 🟡 | n/a | 12:45 ET |
+| 0.1 | Repo, Tylin and Khadim invited, planning files | `PLAN.md` `AGENTS.md` `*_TASKS.md` `docs/` | Stephen | ✅ | n/a | 13:10 ET |
 | 0.2 | Stripe test-mode account + secret key (refuse `sk_live`) | `.env` (never committed) | Tylin | ⬜ | n/a | |
 | 0.3 | Notion integration + pricing data source (`Name` title, `pq_plan_id` text, `Price` number, `Currency` select, `Locked` checkbox), shared with the integration | Notion | Tylin | ⬜ | n/a | Invite Stephen as viewer for filming |
 | 0.4 | Airtable base, SKU table (`pq_plan_id` unique text, `Price` number, `Currency`, `Locked` checkbox), PAT | Airtable | Tylin | ⬜ | n/a | Invite Stephen for filming |
@@ -48,8 +48,8 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 0.7 | OpenAI key; confirm Python `RunState` serialize/deserialize method names in the Agents SDK HITL guide | `.env` | Tylin | ⬜ | n/a | Spec CRITICAL open item |
 | 0.8 | Backend host project (Railway or Render), long-running process for Socket Mode | host | Tylin | ⬜ | n/a | |
 | 0.9 | Vercel project `pricequorum-web` created and linked from `web/` only | `web/.vercel` (ignored) | Stephen | ⬜ | 1.9 | Verify `.vercel/project.json` names `pricequorum-web` before every `--prod` |
-| 0.10 | Reference site study (screenshots, motion video) | local only | Stephen | ⬜ | n/a | |
-| 0.11 | Ledger-paper textures generated and optimized | `web/public/textures/` | Stephen | 🟡 | 1.9 | kie.ai |
+| 0.10 | Reference site study (screenshots, motion video) | local only | Stephen | ✅ | n/a | 13:00 ET |
+| 0.11 | Ledger-paper textures generated and optimized | `web/public/textures/` `web/public/scenes/` | Stephen | ✅ | 1.9 | kie.ai, plus painterly desk scene |
 
 ### Phase 1: Contract + foundations (until 2:30 PM ET)
 
@@ -63,11 +63,11 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 1.6 | SSE: persist-then-send, `Last-Event-ID` replay, 15 s heartbeat, `events.json` | `backend/api/sse.py` | Tylin | ⬜ | 1.2 1.3 | SSE response must include CORS headers |
 | 1.7 | Seed and reset: Stripe product/prices with `pq_plan_id` metadata and lookup key, Notion rows, Airtable rows | `backend/evals/fixtures/` `Makefile` | Tylin | ⬜ | 0.2 0.3 0.4 | `make seed`, `make reset` idempotent |
 | 1.8 | Backend CI: ruff format check, ruff, mypy, pytest, pip-licenses, gitleaks | `.github/workflows/backend.yml` | Tylin | ⬜ | 1.1 | Every gate bare, no pipes |
-| 1.9 | Web scaffold: Next.js 16 App Router, Tailwind 4, fonts, tokens, ESLint, Vitest | `web/` | Stephen | ⬜ | n/a | |
+| 1.9 | Web scaffold: Next.js 16 App Router, Tailwind 4, fonts, tokens, ESLint, Vitest | `web/` | Stephen | ✅ | n/a | tsc and eslint clean |
 | 1.10 | Web CI: `openapi-typescript` drift check vs `shared/openapi.json`, tsc, eslint, vitest, build | `.github/workflows/web.yml` | Stephen | ⬜ | 1.9 | |
 | 1.11 | Generated types, API client, SSE hook with replay, run reducer + tests | `web/lib/api/` | Stephen | ⬜ | 1.3 | Fixtures typed from generated types, dev only |
-| 1.12 | Preloader: ribbons, logo clip reveal, min 2 s, waits for assets + `/api/health` | `web/components/motion/Preloader.tsx` | Stephen | ⬜ | 1.9 | |
-| 1.13 | Ticket intro + request form posting `/api/runs` | `web/components/chapters/Ticket.tsx` | Stephen | ⬜ | 1.11 | |
+| 1.12 | Preloader: ribbons, logo clip reveal, min 2 s, waits for assets + `/api/health` | `web/components/motion/Preloader.tsx` | Stephen | 🟡 | 1.9 | 13:15 ET, built, visual pass |
+| 1.13 | Ticket intro + request form posting `/api/runs` | `web/components/chapters/Ticket.tsx` | Stephen | 🟡 | 1.11 | 13:15 ET, built, visual pass |
 | 1.14 | Motion primitives: reveal group, masked word reveal, word stagger, framing ribbons, CTA, reduced motion | `web/components/motion/` | Stephen | ⬜ | 1.9 | |
 | 1.15 | First Vercel deploy + served-bundle check | Vercel | Stephen | ⬜ | 0.9 | |
 
