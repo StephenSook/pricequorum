@@ -48,7 +48,7 @@ Deadline: **7:00 PM ET submission**, confirmation verified by 6:55 ET.
 - [ ] **3.16** Live drift strip from `/api/monitor/events`
 - [x] **3.17** `/judges` three-minute tour with deep links and curl commands, backend stops gated on a live health check
 - [ ] **3.18** Sound (stamp, paper, chain) muted by default + subtitles toggle
-- [x] **3.19** axe WCAG 2.1 AA 10/10 on production, mobile stills reviewed, Lighthouse accessibility, best practices and SEO 100 (performance not measured)
+- [x] **3.19** axe WCAG 2.1 AA 10/10 on production, mobile stills reviewed, Lighthouse accessibility, best practices and SEO 100. Performance trace on `/`: LCP 268 ms and CLS 0 on desktop, LCP 1025 ms and CLS 0 on mobile with Slow 4G and 4x CPU
 - [-] **3.20** `deployed-smoke.yml` live and green. Add `/api/health` and a real run once the backend is deployed
 
 ## Phase 4 (submission, all yours)

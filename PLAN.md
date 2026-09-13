@@ -119,7 +119,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 3.16 | Live drift strip | `web/components/DriftStrip.tsx` | Stephen | ⬜ | 3.6 | |
 | 3.17 | `/judges` itinerary with deep links and curl commands | `web/app/judges/` `web/components/JudgeTour.tsx` | Stephen | ✅ | 3.5 | Live; backend stops marked live only after a browser health check succeeds |
 | 3.18 | Sound design + subtitles toggle (muted by default) | `web/components/Sound*.tsx` | Stephen | ⬜ | 1.14 | |
-| 3.19 | Mobile pass, axe, Lighthouse | `web/` `web/tests/e2e/` | Stephen | ✅ | 2.16 | 13:46 ET. axe WCAG 2.1 AA 10/10 on production (5 pages, desktop + mobile); Lighthouse accessibility, best practices and SEO 100 on `/judges` desktop and `/` mobile; performance not measured |
+| 3.19 | Mobile pass, axe, Lighthouse | `web/` `web/tests/e2e/` | Stephen | ✅ | 2.16 | 13:46 ET. axe WCAG 2.1 AA 10/10 on production (5 pages, desktop + mobile); Lighthouse accessibility, best practices and SEO 100 on `/judges` desktop and `/` mobile; 13:52 ET performance trace on `/`: LCP 268 ms, CLS 0 desktop; LCP 1025 ms, CLS 0 mobile at Slow 4G and 4x CPU |
 | 3.20 | Deployed smoke workflow against the live URL | `.github/workflows/deployed-smoke.yml` | Stephen | 🟡 | 2.11 | Page and asset checks green on `9b13a6e`; add `/api/health` and a run once the backend is deployed |
 
 **CHECKPOINT 4:45 PM ET: midpoint rubric re-audit. Count what each criterion's surface shows today, fix the weakest.**
