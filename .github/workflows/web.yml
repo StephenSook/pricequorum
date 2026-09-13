@@ -1,0 +1,63 @@
+name: web
+
+on:
+  push:
+    branches: [main]
+    paths: ["web/**", "shared/openapi.json", ".github/workflows/web.yml"]
+  pull_request:
+    paths: ["web/**", "shared/openapi.json", ".github/workflows/web.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Fails when the committed web types differ from the backend's published contract.
+      # Fails when a backend exists but has not published the contract.
+      # Before the backend exists there is nothing to compare, and the log says so.
+      - name: Contract drift check
+        run: |
+          if [ -f ../shared/openapi.json ]; then
+            npm run gen:api
+            if [ -n "$(git status --porcelain -- lib/api/types.ts)" ]; then
+              echo "lib/api/types.ts is out of date with shared/openapi.json. Run npm run gen:api and commit."
+              git --no-pager diff -- lib/api/types.ts
+              exit 1
+            fi
+          elif [ -d ../backend ]; then
+            echo "backend/ exists but shared/openapi.json is missing. The contract must be published."
+            exit 1
+          else
+            echo "No backend in the repository yet, so there is no contract to compare."
+          fi
+
+      - name: Route types
+        run: npx next typegen
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Build
+        run: npm run build
