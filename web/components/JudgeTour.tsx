@@ -38,6 +38,12 @@ const STOPS: Stop[] = [
     needsBackend: true,
   },
   {
+    title: "See the evaluation results",
+    what: "The scenario pass rate with its confidence interval, refusals, duplicate writes prevented and every named failure.",
+    href: "/evals",
+    needsBackend: true,
+  },
+  {
     title: "Read the source and CI",
     what: "The repository, every commit and every workflow run are public.",
     href: REPO,
