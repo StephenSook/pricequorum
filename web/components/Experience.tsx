@@ -95,9 +95,16 @@ export function Experience() {
         </section>
       )}
 
-      {health && !health.reachable && preloaderGone && !ticketGone ? (
-        <p className="fixed bottom-6 left-1/2 z-[var(--z-overlay)] -translate-x-1/2 rounded-md bg-forest/90 px-4 py-2 text-sm text-paper-deep">
-          Backend not reachable yet. Runs will fail until it is online.
+      {health && preloaderGone ? (
+        <p
+          role="status"
+          className="fixed right-8 top-8 z-[var(--z-overlay)] flex items-center gap-2 rounded-full bg-forest/90 px-4 py-2 text-sm text-paper-deep"
+        >
+          <span
+            aria-hidden="true"
+            className={health.reachable ? "h-2 w-2 rounded-full bg-outcome-success" : "h-2 w-2 rounded-full bg-outcome-needs-human"}
+          />
+          {health.reachable ? "Backend online" : "Backend offline"}
         </p>
       ) : null}
 
