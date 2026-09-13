@@ -1,0 +1,2484 @@
+{
+  "components": {
+    "schemas": {
+      "AdapterFaultPayload": {
+        "properties": {
+          "call_site": {
+            "title": "Call Site",
+            "type": "string"
+          },
+          "injected": {
+            "title": "Injected",
+            "type": "boolean"
+          },
+          "kind": {
+            "enum": [
+              "timeout",
+              "rate_limit",
+              "conflict_409",
+              "server_5xx"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "ledger_id": {
+            "title": "Ledger Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ledger_id",
+          "call_site",
+          "kind",
+          "injected"
+        ],
+        "title": "AdapterFaultPayload",
+        "type": "object"
+      },
+      "ApprovalBody": {
+        "properties": {
+          "decision": {
+            "enum": [
+              "approve",
+              "deny"
+            ],
+            "title": "Decision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "ApprovalBody",
+        "type": "object"
+      },
+      "ApprovalDecided": {
+        "properties": {
+          "approver_display": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Approver Display"
+          },
+          "decided_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decided At"
+          },
+          "decision": {
+            "enum": [
+              "PENDING",
+              "APPROVED",
+              "DENIED",
+              "EXPIRED"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "slack",
+              "operator",
+              "sandbox_auto"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "approver_display",
+          "decided_at",
+          "mode"
+        ],
+        "title": "ApprovalDecided",
+        "type": "object"
+      },
+      "ApprovalRequested": {
+        "properties": {
+          "args_hash": {
+            "title": "Args Hash",
+            "type": "string"
+          },
+          "expires_at": {
+            "title": "Expires At",
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "slack",
+              "operator",
+              "sandbox_auto"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "slack_channel": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slack Channel"
+          },
+          "slack_ts": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slack Ts"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "summary",
+          "args_hash",
+          "slack_channel",
+          "slack_ts",
+          "expires_at",
+          "mode"
+        ],
+        "title": "ApprovalRequested",
+        "type": "object"
+      },
+      "ApprovalResult": {
+        "properties": {
+          "decision": {
+            "title": "Decision",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision"
+        ],
+        "title": "ApprovalResult",
+        "type": "object"
+      },
+      "Candidate": {
+        "properties": {
+          "app": {
+            "title": "App",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "app",
+          "label",
+          "score"
+        ],
+        "title": "Candidate",
+        "type": "object"
+      },
+      "EvalResultIn": {
+        "properties": {
+          "description": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "duplicate_writes_prevented": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Duplicate Writes Prevented",
+            "type": "integer"
+          },
+          "expected_outcome": {
+            "anyOf": [
+              {
+                "enum": [
+                  "SUCCESS",
+                  "PARTIAL",
+                  "REFUSED",
+                  "NEEDS_HUMAN"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null or empty for a detection scenario, such as chain_tamper, that starts no run.",
+            "title": "Expected Outcome"
+          },
+          "forbidden_attempted": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Forbidden Attempted",
+            "type": "integer"
+          },
+          "forbidden_refused": {
+            "default": 0,
+            "minimum": 0.0,
+            "title": "Forbidden Refused",
+            "type": "integer"
+          },
+          "observed_outcome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "One outcome, or outcomes joined with '+' when the scenario starts several runs.",
+            "title": "Observed Outcome"
+          },
+          "passed": {
+            "title": "Passed",
+            "type": "boolean"
+          },
+          "run_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Id"
+          },
+          "scenario_id": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Scenario Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario_id",
+          "passed"
+        ],
+        "title": "EvalResultIn",
+        "type": "object"
+      },
+      "EvalRunIn": {
+        "properties": {
+          "commit_sha": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commit Sha"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/EvalResultIn"
+            },
+            "minItems": 1,
+            "title": "Results",
+            "type": "array"
+          },
+          "run_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run At"
+          }
+        },
+        "required": [
+          "results"
+        ],
+        "title": "EvalRunIn",
+        "type": "object"
+      },
+      "EvalRunRecorded": {
+        "properties": {
+          "batch_id": {
+            "title": "Batch Id",
+            "type": "string"
+          },
+          "results": {
+            "title": "Results",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "batch_id",
+          "results"
+        ],
+        "title": "EvalRunRecorded",
+        "type": "object"
+      },
+      "EventAdapterFault": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/AdapterFaultPayload"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "adapter.fault",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventAdapterFault",
+        "type": "object"
+      },
+      "EventApprovalDecided": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ApprovalDecided"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "approval.decided",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventApprovalDecided",
+        "type": "object"
+      },
+      "EventApprovalRequested": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ApprovalRequested"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "approval.requested",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventApprovalRequested",
+        "type": "object"
+      },
+      "EventIntentParsed": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/IntentParsed"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "intent.parsed",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventIntentParsed",
+        "type": "object"
+      },
+      "EventInvariantResult": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/InvariantResultPayload"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "invariant.result",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventInvariantResult",
+        "type": "object"
+      },
+      "EventLedgerCompleted": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/LedgerCompleted"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "ledger.completed",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventLedgerCompleted",
+        "type": "object"
+      },
+      "EventLedgerPending": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/LedgerPending"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "ledger.pending",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventLedgerPending",
+        "type": "object"
+      },
+      "EventPolicyDecided": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/PolicyDecided"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "policy.decided",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventPolicyDecided",
+        "type": "object"
+      },
+      "EventReadbackRecovery": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ReadbackRecovery"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "readback.recovery",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventReadbackRecovery",
+        "type": "object"
+      },
+      "EventReadbackResult": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ReadbackResultPayload"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "readback.result",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventReadbackResult",
+        "type": "object"
+      },
+      "EventRenewalInvoice": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/RenewalInvoice"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "renewal.invoice",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventRenewalInvoice",
+        "type": "object"
+      },
+      "EventResolveCompleted": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/ResolveCompleted"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "resolve.completed",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventResolveCompleted",
+        "type": "object"
+      },
+      "EventRunCreated": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/RunCreated"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "run.created",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventRunCreated",
+        "type": "object"
+      },
+      "EventRunOutcome": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/RunOutcomePayload"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "run.outcome",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventRunOutcome",
+        "type": "object"
+      },
+      "EventRunStatus": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/RunStatusPayload"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "run.status",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventRunStatus",
+        "type": "object"
+      },
+      "EventSubscriptionMigrated": {
+        "properties": {
+          "at": {
+            "title": "At",
+            "type": "string"
+          },
+          "payload": {
+            "$ref": "#/components/schemas/SubscriptionMigrated"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          },
+          "seq": {
+            "title": "Seq",
+            "type": "integer"
+          },
+          "type": {
+            "const": "subscription.migrated",
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "seq",
+          "run_id",
+          "type",
+          "at",
+          "payload"
+        ],
+        "title": "EventSubscriptionMigrated",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealRequest": {
+        "properties": {
+          "plan_key": {
+            "pattern": "^[A-Za-z0-9_:-]{1,64}$",
+            "title": "Plan Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan_key"
+        ],
+        "title": "HealRequest",
+        "type": "object"
+      },
+      "HealthResponse": {
+        "properties": {
+          "apps": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Apps",
+            "type": "object"
+          },
+          "commit_sha": {
+            "title": "Commit Sha",
+            "type": "string"
+          },
+          "db": {
+            "enum": [
+              "ok",
+              "down"
+            ],
+            "title": "Db",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "slack_socket": {
+            "enum": [
+              "connected",
+              "down"
+            ],
+            "title": "Slack Socket",
+            "type": "string"
+          },
+          "stripe_mode": {
+            "enum": [
+              "test",
+              "unconfigured"
+            ],
+            "title": "Stripe Mode",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "version",
+          "commit_sha",
+          "db",
+          "stripe_mode",
+          "slack_socket",
+          "apps"
+        ],
+        "title": "HealthResponse",
+        "type": "object"
+      },
+      "IntentParsed": {
+        "properties": {
+          "interval": {
+            "enum": [
+              "month",
+              "year"
+            ],
+            "title": "Interval",
+            "type": "string"
+          },
+          "new_amount": {
+            "$ref": "#/components/schemas/MoneyModel"
+          },
+          "plan_hint": {
+            "title": "Plan Hint",
+            "type": "string"
+          }
+        },
+        "required": [
+          "plan_hint",
+          "new_amount",
+          "interval"
+        ],
+        "title": "IntentParsed",
+        "type": "object"
+      },
+      "InvariantResultPayload": {
+        "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "outcome": {
+            "enum": [
+              "SUCCESS",
+              "PARTIAL",
+              "REFUSED",
+              "NEEDS_HUMAN"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "ok",
+          "detail",
+          "outcome"
+        ],
+        "title": "InvariantResultPayload",
+        "type": "object"
+      },
+      "LedgerCompleted": {
+        "properties": {
+          "entry_hash": {
+            "title": "Entry Hash",
+            "type": "string"
+          },
+          "external_object_id": {
+            "title": "External Object Id",
+            "type": "string"
+          },
+          "ledger_id": {
+            "title": "Ledger Id",
+            "type": "integer"
+          },
+          "prev_hash": {
+            "title": "Prev Hash",
+            "type": "string"
+          },
+          "step_no": {
+            "title": "Step No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ledger_id",
+          "step_no",
+          "external_object_id",
+          "prev_hash",
+          "entry_hash"
+        ],
+        "title": "LedgerCompleted",
+        "type": "object"
+      },
+      "LedgerPending": {
+        "properties": {
+          "action": {
+            "title": "Action",
+            "type": "string"
+          },
+          "app": {
+            "title": "App",
+            "type": "string"
+          },
+          "args_hash": {
+            "title": "Args Hash",
+            "type": "string"
+          },
+          "idempotency_key": {
+            "title": "Idempotency Key",
+            "type": "string"
+          },
+          "ledger_id": {
+            "title": "Ledger Id",
+            "type": "integer"
+          },
+          "step_no": {
+            "title": "Step No",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ledger_id",
+          "step_no",
+          "app",
+          "action",
+          "idempotency_key",
+          "args_hash"
+        ],
+        "title": "LedgerPending",
+        "type": "object"
+      },
+      "MatchRequest": {
+        "properties": {
+          "left": {
+            "$ref": "#/components/schemas/PlanSide"
+          },
+          "right": {
+            "$ref": "#/components/schemas/PlanSide"
+          }
+        },
+        "required": [
+          "left",
+          "right"
+        ],
+        "title": "MatchRequest",
+        "type": "object"
+      },
+      "MatchResult": {
+        "properties": {
+          "decision": {
+            "enum": [
+              "fuzzy",
+              "human",
+              "different_currency",
+              "different_interval"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "match": {
+            "title": "Match",
+            "type": "boolean"
+          },
+          "score": {
+            "title": "Score",
+            "type": "integer"
+          },
+          "threshold": {
+            "title": "Threshold",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "match",
+          "score",
+          "decision",
+          "threshold",
+          "detail"
+        ],
+        "title": "MatchResult",
+        "type": "object"
+      },
+      "MoneyModel": {
+        "properties": {
+          "currency": {
+            "title": "Currency",
+            "type": "string"
+          },
+          "minor_units": {
+            "title": "Minor Units",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "minor_units",
+          "currency"
+        ],
+        "title": "MoneyModel",
+        "type": "object"
+      },
+      "PlanSide": {
+        "properties": {
+          "currency": {
+            "pattern": "^[A-Za-z]{3}$",
+            "title": "Currency",
+            "type": "string"
+          },
+          "interval": {
+            "default": "",
+            "maxLength": 20,
+            "title": "Interval",
+            "type": "string"
+          },
+          "label": {
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "currency"
+        ],
+        "title": "PlanSide",
+        "type": "object"
+      },
+      "PolicyDecided": {
+        "properties": {
+          "decision": {
+            "enum": [
+              "ALLOW",
+              "REFUSED",
+              "NEEDS_HUMAN"
+            ],
+            "title": "Decision",
+            "type": "string"
+          },
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
+          "remedy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remedy"
+          },
+          "rule": {
+            "title": "Rule",
+            "type": "string"
+          }
+        },
+        "required": [
+          "decision",
+          "rule",
+          "detail",
+          "remedy"
+        ],
+        "title": "PolicyDecided",
+        "type": "object"
+      },
+      "ReadbackRecovery": {
+        "properties": {
+          "call_site": {
+            "title": "Call Site",
+            "type": "string"
+          },
+          "external_object_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Object Id"
+          },
+          "found_landed": {
+            "title": "Found Landed",
+            "type": "boolean"
+          },
+          "ledger_id": {
+            "title": "Ledger Id",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "ledger_id",
+          "call_site",
+          "found_landed",
+          "external_object_id"
+        ],
+        "title": "ReadbackRecovery",
+        "type": "object"
+      },
+      "ReadbackResultPayload": {
+        "properties": {
+          "app": {
+            "title": "App",
+            "type": "string"
+          },
+          "fresh": {
+            "title": "Fresh",
+            "type": "boolean"
+          },
+          "raw_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Value"
+          },
+          "read_at": {
+            "title": "Read At",
+            "type": "string"
+          },
+          "source_id": {
+            "title": "Source Id",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MoneyModel"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "app",
+          "value",
+          "raw_value",
+          "fresh",
+          "read_at",
+          "source_id"
+        ],
+        "title": "ReadbackResultPayload",
+        "type": "object"
+      },
+      "RenewalInvoice": {
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/MoneyModel"
+          },
+          "invoice_id": {
+            "title": "Invoice Id",
+            "type": "string"
+          },
+          "test_clock_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Test Clock Id"
+          }
+        },
+        "required": [
+          "invoice_id",
+          "amount",
+          "test_clock_id"
+        ],
+        "title": "RenewalInvoice",
+        "type": "object"
+      },
+      "ResolveCompleted": {
+        "properties": {
+          "airtable_record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Airtable Record Id"
+          },
+          "candidates": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "title": "Candidates",
+            "type": "array"
+          },
+          "confidence": {
+            "title": "Confidence",
+            "type": "integer"
+          },
+          "decided_by": {
+            "enum": [
+              "exact_id",
+              "fuzzy",
+              "human"
+            ],
+            "title": "Decided By",
+            "type": "string"
+          },
+          "notion_page_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notion Page Id"
+          },
+          "plan_key": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Key"
+          },
+          "stripe_price_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stripe Price Id"
+          },
+          "stripe_product_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stripe Product Id"
+          }
+        },
+        "required": [
+          "plan_key",
+          "stripe_product_id",
+          "stripe_price_id",
+          "notion_page_id",
+          "airtable_record_id",
+          "confidence",
+          "decided_by",
+          "candidates"
+        ],
+        "title": "ResolveCompleted",
+        "type": "object"
+      },
+      "RunCreateRequest": {
+        "properties": {
+          "approval_mode": {
+            "default": "slack",
+            "description": "sandbox_auto approves immediately. Requires X-Operator-Token.",
+            "enum": [
+              "slack",
+              "sandbox_auto"
+            ],
+            "title": "Approval Mode",
+            "type": "string"
+          },
+          "change_key": {
+            "anyOf": [
+              {
+                "pattern": "^[A-Za-z0-9._:-]{1,64}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Change Key"
+          },
+          "fault": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Named fault scenario. Requires X-Operator-Token.",
+            "title": "Fault"
+          },
+          "request_text": {
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Request Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_text"
+        ],
+        "title": "RunCreateRequest",
+        "type": "object"
+      },
+      "RunCreated": {
+        "properties": {
+          "request_text": {
+            "title": "Request Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "request_text"
+        ],
+        "title": "RunCreated",
+        "type": "object"
+      },
+      "RunCreatedResponse": {
+        "properties": {
+          "events_url": {
+            "title": "Events Url",
+            "type": "string"
+          },
+          "run_id": {
+            "title": "Run Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_id",
+          "events_url"
+        ],
+        "title": "RunCreatedResponse",
+        "type": "object"
+      },
+      "RunOutcomePayload": {
+        "properties": {
+          "chain_head": {
+            "title": "Chain Head",
+            "type": "string"
+          },
+          "invariants_expected": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Invariants Expected",
+            "type": "array"
+          },
+          "outcome": {
+            "enum": [
+              "SUCCESS",
+              "PARTIAL",
+              "REFUSED",
+              "NEEDS_HUMAN"
+            ],
+            "title": "Outcome",
+            "type": "string"
+          },
+          "public_key": {
+            "title": "Public Key",
+            "type": "string"
+          },
+          "remedy": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Remedy"
+          },
+          "signature": {
+            "title": "Signature",
+            "type": "string"
+          }
+        },
+        "required": [
+          "outcome",
+          "remedy",
+          "chain_head",
+          "signature",
+          "public_key",
+          "invariants_expected"
+        ],
+        "title": "RunOutcomePayload",
+        "type": "object"
+      },
+      "RunStatusPayload": {
+        "properties": {
+          "status": {
+            "enum": [
+              "running",
+              "awaiting_human",
+              "done",
+              "refused",
+              "failed"
+            ],
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status"
+        ],
+        "title": "RunStatusPayload",
+        "type": "object"
+      },
+      "SandboxRunRequest": {
+        "properties": {
+          "scenario": {
+            "enum": [
+              "happy_path",
+              "timeout_after_commit",
+              "prompt_injection",
+              "locked_record",
+              "chain_tamper",
+              "concurrent_runs",
+              "drift"
+            ],
+            "title": "Scenario",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scenario"
+        ],
+        "title": "SandboxRunRequest",
+        "type": "object"
+      },
+      "SandboxRunsCreated": {
+        "properties": {
+          "approval_mode": {
+            "const": "sandbox_auto",
+            "title": "Approval Mode",
+            "type": "string"
+          },
+          "events_urls": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Events Urls",
+            "type": "array"
+          },
+          "run_ids": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Run Ids",
+            "type": "array"
+          },
+          "sandbox_plan_key": {
+            "title": "Sandbox Plan Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "run_ids",
+          "events_urls",
+          "sandbox_plan_key",
+          "approval_mode"
+        ],
+        "title": "SandboxRunsCreated",
+        "type": "object"
+      },
+      "SandboxStatus": {
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "cooldown_seconds": {
+            "title": "Cooldown Seconds",
+            "type": "integer"
+          },
+          "queue_depth": {
+            "title": "Queue Depth",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "available",
+          "queue_depth",
+          "cooldown_seconds"
+        ],
+        "title": "SandboxStatus",
+        "type": "object"
+      },
+      "SubscriptionMigrated": {
+        "properties": {
+          "from_price": {
+            "title": "From Price",
+            "type": "string"
+          },
+          "proration_behavior": {
+            "title": "Proration Behavior",
+            "type": "string"
+          },
+          "subscription_id": {
+            "title": "Subscription Id",
+            "type": "string"
+          },
+          "to_price": {
+            "title": "To Price",
+            "type": "string"
+          }
+        },
+        "required": [
+          "subscription_id",
+          "from_price",
+          "to_price",
+          "proration_behavior"
+        ],
+        "title": "SubscriptionMigrated",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Changes one SaaS plan price exactly once across Stripe, Notion and Airtable, approved in Slack.",
+    "title": "PriceQuorum API",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/evals/latest": {
+      "get": {
+        "operationId": "get_evals_latest_api_evals_latest_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Evals Latest Api Evals Latest Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Evals Latest"
+      }
+    },
+    "/api/evals/results": {
+      "post": {
+        "operationId": "post_eval_results_api_evals_results_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-operator-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Operator-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EvalRunIn"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EvalRunRecorded"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Post Eval Results"
+      }
+    },
+    "/api/health": {
+      "get": {
+        "operationId": "health_api_health_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health"
+      }
+    },
+    "/api/ledger/export": {
+      "get": {
+        "operationId": "ledger_export_api_ledger_export_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "run_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Run Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Ledger Export Api Ledger Export Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ledger Export"
+      }
+    },
+    "/api/ledger/verify": {
+      "post": {
+        "operationId": "ledger_verify_api_ledger_verify_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Ledger Verify Api Ledger Verify Post"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Ledger Verify"
+      }
+    },
+    "/api/monitor/events": {
+      "get": {
+        "operationId": "monitor_events_api_monitor_events_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "last-event-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Monitor Events Api Monitor Events Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Monitor Events"
+      }
+    },
+    "/api/monitor/heal": {
+      "post": {
+        "operationId": "monitor_heal_api_monitor_heal_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-operator-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Operator-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HealRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunCreatedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Monitor Heal"
+      }
+    },
+    "/api/proof": {
+      "get": {
+        "operationId": "get_proof_api_proof_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Proof Api Proof Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Proof"
+      }
+    },
+    "/api/public-key": {
+      "get": {
+        "operationId": "public_key_api_public_key_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Public Key Api Public Key Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Public Key"
+      }
+    },
+    "/api/resolver/match": {
+      "post": {
+        "operationId": "resolver_match_api_resolver_match_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MatchRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Resolver Match"
+      }
+    },
+    "/api/runs": {
+      "post": {
+        "operationId": "create_run_api_runs_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-operator-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Operator-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RunCreateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RunCreatedResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Run"
+      }
+    },
+    "/api/runs/{run_id}": {
+      "get": {
+        "operationId": "get_run_api_runs__run_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Run Api Runs  Run Id  Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Run"
+      }
+    },
+    "/api/runs/{run_id}/approval": {
+      "post": {
+        "operationId": "operator_approval_api_runs__run_id__approval_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-operator-token",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Operator-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApprovalBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApprovalResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Operator Approval"
+      }
+    },
+    "/api/runs/{run_id}/events": {
+      "get": {
+        "operationId": "stream_api_runs__run_id__events_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "last-event-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Last-Event-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Stream Api Runs  Run Id  Events Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stream"
+      }
+    },
+    "/api/runs/{run_id}/events.json": {
+      "get": {
+        "operationId": "events_json_api_runs__run_id__events_json_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "run_id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "title": "Run Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "discriminator": {
+                      "mapping": {
+                        "adapter.fault": "#/components/schemas/EventAdapterFault",
+                        "approval.decided": "#/components/schemas/EventApprovalDecided",
+                        "approval.requested": "#/components/schemas/EventApprovalRequested",
+                        "intent.parsed": "#/components/schemas/EventIntentParsed",
+                        "invariant.result": "#/components/schemas/EventInvariantResult",
+                        "ledger.completed": "#/components/schemas/EventLedgerCompleted",
+                        "ledger.pending": "#/components/schemas/EventLedgerPending",
+                        "policy.decided": "#/components/schemas/EventPolicyDecided",
+                        "readback.recovery": "#/components/schemas/EventReadbackRecovery",
+                        "readback.result": "#/components/schemas/EventReadbackResult",
+                        "renewal.invoice": "#/components/schemas/EventRenewalInvoice",
+                        "resolve.completed": "#/components/schemas/EventResolveCompleted",
+                        "run.created": "#/components/schemas/EventRunCreated",
+                        "run.outcome": "#/components/schemas/EventRunOutcome",
+                        "run.status": "#/components/schemas/EventRunStatus",
+                        "subscription.migrated": "#/components/schemas/EventSubscriptionMigrated"
+                      },
+                      "propertyName": "type"
+                    },
+                    "oneOf": [
+                      {
+                        "$ref": "#/components/schemas/EventRunCreated"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventRunStatus"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventIntentParsed"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventResolveCompleted"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventPolicyDecided"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventApprovalRequested"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventApprovalDecided"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventLedgerPending"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventAdapterFault"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventReadbackRecovery"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventLedgerCompleted"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventSubscriptionMigrated"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventRenewalInvoice"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventReadbackResult"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventInvariantResult"
+                      },
+                      {
+                        "$ref": "#/components/schemas/EventRunOutcome"
+                      }
+                    ]
+                  },
+                  "title": "Response Events Json Api Runs  Run Id  Events Json Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Events Json"
+      }
+    },
+    "/api/sandbox/runs": {
+      "post": {
+        "operationId": "sandbox_runs_api_sandbox_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SandboxRunRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxRunsCreated"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Sandbox Runs"
+      }
+    },
+    "/api/sandbox/status": {
+      "get": {
+        "operationId": "sandbox_status_api_sandbox_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SandboxStatus"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sandbox Status"
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+name: backend
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**", "shared/openapi.json", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", "shared/openapi.json", ".github/workflows/backend.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: pricequorum_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/pricequorum_test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+
+      - name: Install
+        run: uv sync --frozen
+
+      - name: Format check
+        run: uv run ruff format --check .
+
+      - name: Lint
+        run: uv run ruff check .
+
+      - name: Type check
+        run: uv run mypy pricequorum
+
+      - name: Tests
+        run: uv run pytest -q
+
+      - name: OpenAPI contract is current
+        run: uv run python -m pricequorum.openapi --check

@@ -115,6 +115,17 @@ class StripePort(Protocol):
         """Read-back used for recovery: the id of an active price with this amount, if one landed."""
         ...
 
+    def find_created_price(
+        self, product_id: str, amount: Money, interval: Interval, lookup_key: str, idempotency_key: str
+    ) -> str | None:
+        """Read-back used to recover a create: the price this idempotency key created, if it landed. A price
+        with the same amount that anything else created is never returned."""
+        ...
+
+    def price_is_archived(self, price_id: str) -> bool:
+        """Read-back used to recover an archive: whether this exact price is inactive."""
+        ...
+
     def read_back(self, product_id: str) -> Readback: ...
 
 

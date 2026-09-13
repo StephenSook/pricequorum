@@ -1,0 +1,45 @@
+databases:
+  - name: pricequorum-db
+    plan: free
+    databaseName: pricequorum
+    user: pricequorum
+
+services:
+  - type: web
+    name: pricequorum-api
+    runtime: docker
+    plan: free
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: pricequorum-db
+          property: connectionString
+      - key: PQ_ALLOWED_ORIGINS
+        value: https://pricequorum-web.vercel.app,http://localhost:3000,http://localhost:8081
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: NOTION_TOKEN
+        sync: false
+      - key: NOTION_DATA_SOURCE_ID
+        sync: false
+      - key: AIRTABLE_PAT
+        sync: false
+      - key: AIRTABLE_BASE_ID
+        sync: false
+      - key: AIRTABLE_TABLE
+        sync: false
+      - key: SLACK_BOT_TOKEN
+        sync: false
+      - key: SLACK_APP_TOKEN
+        sync: false
+      - key: SLACK_APPROVAL_CHANNEL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: PQ_OPERATOR_TOKEN
+        sync: false
+      - key: PQ_SIGNING_KEY
+        sync: false

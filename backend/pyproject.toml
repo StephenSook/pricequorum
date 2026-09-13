@@ -1,0 +1,57 @@
+[project]
+name = "pricequorum"
+version = "0.1.0"
+description = "Changes a SaaS plan price once across Stripe, Notion and Airtable, approved in Slack, proven by read-back."
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "fastapi>=0.115",
+  "uvicorn[standard]>=0.30",
+  "psycopg[binary,pool]>=3.2",
+  "sse-starlette>=2.1",
+  "pydantic>=2.8",
+  "pydantic-settings>=2.4",
+  "rfc8785>=0.1.4",
+  "pynacl>=1.5",
+  "rapidfuzz>=3.9",
+  "anthropic>=0.40",
+  "httpx>=0.27",
+  "stripe>=11",
+  "slack-bolt>=1.20",
+  "slack-sdk>=3.33",
+  "mcp>=2.2",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.3",
+  "pytest-asyncio>=0.24",
+  "ruff>=0.6",
+  "mypy>=1.11",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["pricequorum"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "W"]
+# The formatter owns line length; long human-readable remedy strings stay on one line.
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_unused_ignores = false
+check_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+pythonpath = ["."]
