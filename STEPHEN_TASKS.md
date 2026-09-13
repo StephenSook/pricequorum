@@ -17,27 +17,27 @@ Deadline: **7:00 PM ET submission**, confirmation verified by 6:55 ET.
 ## Phase 0
 
 - [x] **0.1** Repo, invites (Tylin, Khadim), planning files
-- [ ] **0.9** Vercel project `pricequorum-web`, linked from `web/` only. Check `.vercel/project.json` before every `--prod`.
+- [x] **0.9** Vercel project `pricequorum-web`, linked from `web/` only, framework declared in `web/vercel.json`. Check `.vercel/project.json` before every `--prod`.
 - [x] **0.10** Reference site study: stills + motion video
 - [x] **0.11** Textures (paper grain, marbled endpaper, ruled ledger, olive ribbon, stamp ink, dark deckled paper) + painterly ledger-desk scene, webp
 
 ## Phase 1
 
 - [x] **1.9** Next.js 16 App Router + Tailwind 4 + fonts (Archivo extended display and UI, JetBrains Mono for hashes) + tokens
-- [ ] **1.10** `web.yml`: `npm ci`, regenerate types and fail on diff, `tsc --noEmit`, `eslint`, `vitest run`, `next build`
-- [-] **1.11** API client done (runtime-validated run creation, health check). Generated types, SSE hook with `Last-Event-ID` replay and run reducer wait on `shared/openapi.json`
-- [-] **1.12** Preloader built (ribbons 82 px, squares 48 x 82 gap 42, rotations 2 and -3 deg, expo.inOut 0.45 / 0.55 stagger 0.04, leave yPercent -100 in 0.62 s, min 2 s, waits for fonts, images and `/api/health`). Needs visual check
-- [-] **1.13** Ticket built ("one price / THREE SYSTEMS / agree", reveal stagger 0.14, masked word slide yPercent 110, tearing stub, pointer parallax, idle drift, request form). Needs visual check
+- [x] **1.10** `web.yml`: contract drift check, `tsc --noEmit`, `eslint`, `vitest run`, `next build`. Green on `cbef0a5`
+- [-] **1.11** API client, run reducer, replay-safe SSE hook and unit tests done. Generated types wait on `shared/openapi.json`
+- [x] **1.12** Preloader (ribbons 82 px, squares 48 x 82 gap 42, rotations 2 and -3 deg, expo.inOut 0.45 / 0.55 stagger 0.04, leave yPercent -100 in 0.62 s, min 2 s, waits for fonts, images and `/api/health`)
+- [x] **1.13** Ticket ("one price / THREE SYSTEMS / agree", reveal stagger 0.14, masked word slide yPercent 110, tearing stub, pointer parallax, idle drift, request form)
 - [-] **1.14** Motion primitives + reduced motion (in components; shared hooks later)
-- [ ] **1.15** First deploy, grep served bundle for a unique string
+- [x] **1.15** Live at https://pricequorum-web.vercel.app, served-page checks pass
 
 ## Phase 2
 
-- [ ] **2.12** Chapter 01 Resolve: three identifier cards thread together, confidence, NEEDS_HUMAN remedy branch
-- [ ] **2.13** Chapter 02 Approve: live mirrored Slack card, approver name, TTL countdown, label for operator or sandbox approvals
-- [ ] **2.14** Chapter 03 Migrate: ledger entries stamp onto a ruled sheet; timeout banner (shows "injected" when it was); "reading Stripe back"; "found landed, not retried"
-- [ ] **2.15** Chapter 04 Verify: three paper columns flip to fresh read-backs in minor units; invariant bar
-- [ ] **2.16** Receipt outro + `/runs/[id]`: truncated hashes (first 8, last 4, copy button), signature, public key
+- [-] **2.12** Chapter 01 Resolve built: identifier cards, confidence, NEEDS_HUMAN remedy branch. Unverified until real events arrive
+- [-] **2.13** Chapter 02 Approve built: mirrored approval card, approver name, TTL countdown, labels for operator or sandbox approvals. Unverified until real events arrive
+- [-] **2.14** Chapter 03 Migrate built: ruled ledger sheet, fault banner with the injected label, read-back recovery text. Unverified until real events arrive
+- [-] **2.15** Chapter 04 Verify built: three read-back columns in minor units, invariant bar. Unverified until real events arrive
+- [-] **2.16** Receipt built: outcome stamp, truncated hashes with copy, signature, public key. `/runs/[id]` permalink still to build
 - [ ] **2.17** WebGL paper shader with static fallback
 
 ## Phase 3
