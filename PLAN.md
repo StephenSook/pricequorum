@@ -21,13 +21,15 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 
 ## Judged criteria and the surface that answers each
 
-| Criterion | Weight | Surface a judge actually sees |
-|---|---|---|
-| Technical execution | 30% | Live three-app write path on the deployed site; `backend/adapters/*`; ledger; resolver |
-| Reliability & evaluation | 25% | `/api/proof` recomputed number; `/evals` board with n, CI and a named failure; `/verify` browser-side chain check; timeout-after-commit recovery on camera |
-| Usefulness | 20% | Ticket intro states the problem with a sourced frequency number; Slack approval gate; drift detector |
-| Originality | 15% | Verify-and-refuse loop; `backend/agent/policy.py` (the file that does not read English); `/break` judge panel |
-| Demo clarity | 10% | Two-minute video built from real captures of the deployed site; chaptered UI |
+**Organizers at the opening (12:00 ET) put heavy emphasis on technical execution.** Treat the precision gates below as merge blockers, not goals.
+
+| Criterion | Weight | Surface a judge actually sees | Precision gate (must be true before we claim it) |
+|---|---|---|---|
+| Technical execution | 30% | Live three-app write path on the deployed site; `backend/adapters/*`; ledger; resolver | Every Stripe call matches spec section 5 exactly (param names, `Idempotency-Key`, 409 vs 429). Integers only for money. Notion `2025-09-03` data sources. Airtable upsert on `pq_plan_id` with JSON numbers. mypy and tsc strict, zero `any` on the contract. Integration tests hit real Stripe test mode, Notion and Airtable, not only mocks. |
+| Reliability & evaluation | 25% | `/api/proof` recomputed number; `/evals` board with n, CI and a named failure; `/verify` browser-side chain check; timeout-after-commit recovery on camera | All 20 scenarios run in CI against real test-mode systems. Each eval gate is broken on purpose once and goes red. Browser and server chain verifiers agree on the same head. |
+| Usefulness | 20% | Ticket intro states the problem with a sourced frequency number; Slack approval gate; drift detector | Every number shown carries a source in `docs/fact-sheet.md`. The Slack card really pauses the run. |
+| Originality | 15% | Verify-and-refuse loop; `backend/agent/policy.py` (the file that does not read English); `/break` judge panel | Every refusal returns a remedy. The injection refusal is enforced in `policy.py`, proven by a test that runs with the model output forced to the malicious value. |
+| Demo clarity | 10% | Two-minute video built from real captures of the deployed site; chaptered UI | Every animated beat is driven by a real event. Frames checked at each beat. |
 
 ---
 
