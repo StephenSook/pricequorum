@@ -16,19 +16,19 @@ Deadline: **7:00 PM ET submission**, confirmation verified by 6:55 ET.
 
 ## Phase 0
 
-- [-] **0.1** Repo, invite, planning files
+- [x] **0.1** Repo, invites (Tylin, Khadim), planning files
 - [ ] **0.9** Vercel project `pricequorum-web`, linked from `web/` only. Check `.vercel/project.json` before every `--prod`.
-- [ ] **0.10** Reference site study: stills + motion video
-- [-] **0.11** Textures: paper grain, marbled endpaper, ruled ledger, olive ribbon, stamp ink, dark deckled paper. webp, under 200 KB each.
+- [x] **0.10** Reference site study: stills + motion video
+- [x] **0.11** Textures (paper grain, marbled endpaper, ruled ledger, olive ribbon, stamp ink, dark deckled paper) + painterly ledger-desk scene, webp
 
 ## Phase 1
 
-- [ ] **1.9** Next.js 16 App Router + Tailwind 4 + fonts (Instrument Serif, Hanken Grotesk, JetBrains Mono) + tokens
+- [x] **1.9** Next.js 16 App Router + Tailwind 4 + fonts (Archivo extended display and UI, JetBrains Mono for hashes) + tokens
 - [ ] **1.10** `web.yml`: `npm ci`, regenerate types and fail on diff, `tsc --noEmit`, `eslint`, `vitest run`, `next build`
-- [ ] **1.11** Generated types, API client, SSE hook with `Last-Event-ID` replay, run reducer + tests
-- [ ] **1.12** Preloader (ribbons 82 px, squares 48 x 82 gap 42, rotations 2 and -3 deg, expo.inOut 0.45 / 0.55 stagger 0.04, leave yPercent -100 in 0.62 s, min 2 s, waits for assets and `/api/health`)
-- [ ] **1.13** Ticket ("one PRICE / three SYSTEMS", reveal stagger 0.14 delay 0.2 power3.out, masked word slide yPercent 110, ripped stub, pointer parallax, idle drift) with the request form
-- [ ] **1.14** Motion primitives + reduced motion
+- [-] **1.11** API client done (runtime-validated run creation, health check). Generated types, SSE hook with `Last-Event-ID` replay and run reducer wait on `shared/openapi.json`
+- [-] **1.12** Preloader built (ribbons 82 px, squares 48 x 82 gap 42, rotations 2 and -3 deg, expo.inOut 0.45 / 0.55 stagger 0.04, leave yPercent -100 in 0.62 s, min 2 s, waits for fonts, images and `/api/health`). Needs visual check
+- [-] **1.13** Ticket built ("one price / THREE SYSTEMS / agree", reveal stagger 0.14, masked word slide yPercent 110, tearing stub, pointer parallax, idle drift, request form). Needs visual check
+- [-] **1.14** Motion primitives + reduced motion (in components; shared hooks later)
 - [ ] **1.15** First deploy, grep served bundle for a unique string
 
 ## Phase 2
