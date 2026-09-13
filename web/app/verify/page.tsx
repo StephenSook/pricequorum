@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { RoughFrame } from "@/components/motion/RoughFrame";
+import { SceneBackdrop } from "@/components/motion/SceneBackdrop";
 import { LedgerVerifier } from "@/components/verify/LedgerVerifier";
 
 export const metadata: Metadata = {
@@ -11,14 +12,7 @@ export const metadata: Metadata = {
 export default function VerifyPage() {
   return (
     <main className="relative flex min-h-svh flex-1 items-start justify-center overflow-hidden px-4 py-20">
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 z-[var(--z-canvas)] bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgb(35 40 11 / 0.55), rgb(35 40 11 / 0.7)), url(/scenes/ledger-desk.webp), url(/textures/ink-paper-dark.webp)",
-        }}
-      />
+      <SceneBackdrop dim="medium" />
       <RoughFrame />
       <LedgerVerifier />
     </main>
