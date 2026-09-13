@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "gen:api": "openapi-typescript ../shared/openapi.json -o lib/api/types.ts",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@gsap/react": "^2.1.2",
