@@ -2,6 +2,10 @@
 
 Maps transport failures to AdapterFault and business errors to AdapterRefusal, and retries a
 429 (the only status that guarantees the request was not processed) with a bounded backoff.
+
+Only a 2xx response carrying a JSON object counts as success. A redirect, or a success status
+with an HTML page or any other non-object body, is a fault: the caller cannot tell what the app
+did, so it must never be read as an unlocked record or a completed write.
 """
 
 from __future__ import annotations
@@ -41,26 +45,45 @@ def request_json(
         except httpx.TransportError as error:
             raise AdapterFault("timeout", call_site, False, f"transport error: {error}"[:200]) from error
 
-        if response.status_code == 429:
+        status = response.status_code
+        if status == 429:
             if attempt >= max_retries:
                 raise AdapterFault("rate_limit", call_site, False, f"still rate limited after {attempt + 1} attempts")
             sleep(retry_delay(attempt, response))
             continue
-        body = _body(response)
-        if response.status_code >= 500:
-            raise AdapterFault("server_5xx", call_site, False, f"HTTP {response.status_code}")
-        if response.status_code == 409:
+        if status >= 500:
+            raise AdapterFault("server_5xx", call_site, False, f"HTTP {status}")
+        if status == 409:
+            body = _error_body(response)
             raise AdapterFault("conflict_409", call_site, False, str(body.get("message", "conflict"))[:200])
-        if response.status_code >= 400:
-            detail = body.get("message") or body.get("error") or f"HTTP {response.status_code}"
+        if status >= 400:
+            body = _error_body(response)
+            detail = body.get("message") or body.get("error") or f"HTTP {status}"
             if isinstance(detail, dict):
-                detail = detail.get("message") or detail.get("type") or f"HTTP {response.status_code}"
-            raise AdapterRefusal(app, f"{app} refused {call_site}: {detail}", remedy_for(response.status_code, body))
-        return body
+                detail = detail.get("message") or detail.get("type") or f"HTTP {status}"
+            raise AdapterRefusal(app, f"{app} refused {call_site}: {detail}", remedy_for(status, body))
+        if not 200 <= status < 300:
+            raise AdapterFault("server_5xx", call_site, False, f"unexpected HTTP {status}; redirects are not followed")
+        return _success_body(response, call_site)
     raise AdapterFault("rate_limit", call_site, False, "retries exhausted")  # pragma: no cover
 
 
-def _body(response: httpx.Response) -> dict[str, Any]:
+def _success_body(response: httpx.Response, call_site: str) -> dict[str, Any]:
+    try:
+        data = response.json()
+    except ValueError as error:
+        raise AdapterFault(
+            "server_5xx", call_site, False, f"HTTP {response.status_code} with a body that is not JSON"
+        ) from error
+    if not isinstance(data, dict):
+        raise AdapterFault(
+            "server_5xx", call_site, False, f"HTTP {response.status_code} with a body that is not an object"
+        )
+    return data
+
+
+def _error_body(response: httpx.Response) -> dict[str, Any]:
+    """Error bodies are read leniently: they only shape the refusal message."""
     try:
         data = response.json()
     except ValueError:

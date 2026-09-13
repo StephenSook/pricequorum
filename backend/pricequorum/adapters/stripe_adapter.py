@@ -118,13 +118,25 @@ class StripeAdapter:
     def _retrieve_price(self, price_id: str) -> Any:
         return self._call("stripe.price.retrieve", lambda: self._client.v1.prices.retrieve(price_id))
 
+    def _paged(self, call_site: str, first_page: Callable[[], Any]) -> list[Any]:
+        """Every item of a Stripe list, following has_more across pages."""
+        return self._call(call_site, lambda: list(first_page().auto_paging_iter()))
+
+    @staticmethod
+    def _product_id(price: Any) -> str | None:
+        product = _get(price, "product")
+        if isinstance(product, str):
+            return product
+        found = _get(product, "id")
+        return str(found) if found else None
+
     def list_plans(self) -> list[PlanRecord]:
-        products = self._call(
+        products = self._paged(
             "stripe.product.list",
             lambda: self._client.v1.products.list({"active": True, "limit": 100, "expand": ["data.default_price"]}),
         )
         plans: list[PlanRecord] = []
-        for product in _get(products, "data") or []:
+        for product in products:
             price = _get(product, "default_price")
             if isinstance(price, str):  # not expanded; fetch it so the amount is real
                 price = self._retrieve_price(price)
@@ -179,19 +191,83 @@ class StripeAdapter:
             "stripe.price.update",
             lambda: self._client.v1.prices.update(price_id, {"active": False}, {"idempotency_key": idempotency_key}),
         )
+        if _get(price, "active") is not False or _get(price, "id") != price_id:
+            raise AdapterFault(
+                "server_5xx", "stripe.price.update", False, "Stripe answered the archive without that price inactive"
+            )
         self._faults.after("stripe.price.update")
-        return WriteResult(external_object_id=str(_get(price, "id")), replayed=self._replayed(price))
+        return WriteResult(external_object_id=price_id, replayed=self._replayed(price))
+
+    def price_is_archived(self, price_id: str) -> bool:
+        """A fresh read of that exact price. True only when Stripe reports it inactive."""
+        price = self._retrieve_price(price_id)
+        active = _get(price, "active")
+        if not isinstance(active, bool) or _get(price, "id") != price_id:
+            raise AdapterFault(
+                "server_5xx", "stripe.price.retrieve", False, "Stripe returned a price without a readable active flag"
+            )
+        return active is False
+
+    def find_created_price(
+        self, product_id: str, amount: Money, interval: Interval, lookup_key: str, idempotency_key: str
+    ) -> str | None:
+        """Recovers a create_price that may have landed, by the idempotency key it stamped in metadata.
+
+        Looks first at the price holding the lookup key, then at every price of the product, across
+        all pages. A price carrying this key but other terms, a second price with the same key, or an
+        inactive one is refused rather than guessed about. Returns None when nothing carries the key.
+        """
+
+        def carrying_key(prices: list[Any]) -> list[Any]:
+            return [p for p in prices if _get(_get(p, "metadata"), "pq_idempotency_key") == idempotency_key]
+
+        candidates = carrying_key(
+            self._paged(
+                "stripe.price.list", lambda: self._client.v1.prices.list({"lookup_keys": [lookup_key], "limit": 10})
+            )
+        )
+        if not candidates:
+            candidates = carrying_key(
+                self._paged(
+                    "stripe.price.list", lambda: self._client.v1.prices.list({"product": product_id, "limit": 100})
+                )
+            )
+        if not candidates:
+            return None
+        ids = {str(_get(price, "id")) for price in candidates}
+        if len(ids) > 1:
+            raise AdapterRefusal(
+                "stripe",
+                f"More than one Stripe price carries the idempotency key {idempotency_key}: {', '.join(sorted(ids))}.",
+                "Archive the extra prices in the Stripe dashboard, then run the change again.",
+            )
+        price = candidates[0]
+        price_id = str(_get(price, "id"))
+        if self._product_id(price) != product_id or self._money(price) != amount or self._interval(price) != interval:
+            raise AdapterRefusal(
+                "stripe",
+                f"Stripe price {price_id} carries this change's idempotency key but a different product, amount or interval.",
+                "Inspect that price in the Stripe dashboard; do not retry this change until it is explained.",
+            )
+        if _get(price, "active") is not True:
+            raise AdapterRefusal(
+                "stripe",
+                f"Stripe price {price_id} was created for this change but is no longer active.",
+                "Reactivate or recreate the price in the Stripe dashboard, then run the change again.",
+            )
+        return price_id
 
     def find_active_price(self, product_id: str, amount: Money, interval: Interval) -> str | None:
-        prices = self._call(
+        """The newest active price with this amount and interval, scanning every page.
+
+        This answers "is some price at this amount still active", not "did my create land": use
+        find_created_price to recover a create and price_is_archived to prove an archive.
+        """
+        prices = self._paged(
             "stripe.price.list",
             lambda: self._client.v1.prices.list({"product": product_id, "active": True, "limit": 100}),
         )
-        matches = [
-            price
-            for price in _get(prices, "data") or []
-            if self._money(price) == amount and self._interval(price) == interval
-        ]
+        matches = [price for price in prices if self._money(price) == amount and self._interval(price) == interval]
         if not matches:
             return None
         newest = max(matches, key=lambda price: _get(price, "created") or 0)

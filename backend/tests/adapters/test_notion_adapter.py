@@ -118,6 +118,60 @@ def test_errors_map_to_faults_and_refusals_with_remedies() -> None:
     assert slow.value.kind == "timeout"
 
 
+def test_a_200_html_page_during_the_pre_write_read_is_a_fault_and_nothing_is_written() -> None:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.method)
+        return httpx.Response(200, text="<html>maintenance</html>", headers={"content-type": "text/html"})
+
+    notion, _ = build(handler)
+    with pytest.raises(AdapterFault) as raised:
+        notion.write_price(PAGE_ID, Money(2500, "usd"), "k")
+    assert raised.value.kind == "server_5xx"
+    assert seen == ["GET"]
+
+
+def test_redirects_are_never_treated_as_success() -> None:
+    seen: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request.method)
+        if request.method == "GET":
+            return httpx.Response(200, json=page())
+        return httpx.Response(302, headers={"location": "https://example.com/login"})
+
+    notion, _ = build(handler)
+    with pytest.raises(AdapterFault):
+        notion.write_price(PAGE_ID, Money(2500, "usd"), "k")
+    assert seen == ["GET", "PATCH"]
+
+
+def test_pages_missing_the_safety_properties_or_for_another_id_block_the_write() -> None:
+    no_locked = page()
+    del no_locked["properties"]["Locked"]
+    no_currency = page()
+    no_currency["properties"]["Currency"] = {"type": "select", "select": None}
+    other = {**page(), "id": "99999999-2222-3333-4444-555555555555"}
+    for body, error in ((no_locked, AdapterRefusal), (no_currency, AdapterRefusal), (other, AdapterFault)):
+        seen: list[str] = []
+
+        def handler(request: httpx.Request, body: dict[str, Any] = body, seen: list[str] = seen) -> httpx.Response:
+            seen.append(request.method)
+            return httpx.Response(200, json=body)
+
+        notion, _ = build(handler)
+        with pytest.raises(error):
+            notion.write_price(PAGE_ID, Money(2500, "usd"), "k")
+        assert seen == ["GET"]
+
+
+def test_a_half_cent_price_reads_back_as_unreadable() -> None:
+    notion, _ = build(lambda request: httpx.Response(200, json=page(price=25.005)))
+    readback = notion.read_back(PAGE_ID)
+    assert readback.value is None and readback.raw_value == "25.005"
+
+
 def test_injected_fault_fires_after_the_patch_landed() -> None:
     seen: list[str] = []
 

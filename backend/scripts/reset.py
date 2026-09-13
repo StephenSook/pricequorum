@@ -50,7 +50,8 @@ def reset_stripe(key: str) -> None:
             )
             adapter.set_default_price(record.external_id, default_id, f"pq-reset:{seed.pq_plan_id}:default:{stamp}")
         archived = 0
-        for price in client.v1.prices.list({"product": record.external_id, "active": True, "limit": 100}).data:
+        active = client.v1.prices.list({"product": record.external_id, "active": True, "limit": 100})
+        for price in active.auto_paging_iter():
             if price["id"] != default_id:
                 adapter.archive_price(price["id"], f"pq-reset:{price['id']}:archive:{stamp}")
                 archived += 1

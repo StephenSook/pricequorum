@@ -13,6 +13,15 @@ def test_float_stored_price_reads_back_as_the_intended_minor_units() -> None:
     assert major_to_minor(25.5, "usd") == 2550
 
 
+def test_materially_non_integral_prices_are_unreadable_not_rounded() -> None:
+    # 25.005 USD is half a cent: rounding it would falsely agree with 25.01.
+    assert major_to_minor(25.005, "usd") is None
+    assert major_to_minor("25.005", "usd") is None
+    assert major_to_minor(25.0005, "kwd") is None
+    assert major_to_minor(25.01, "usd") == 2501
+    assert major_to_minor(0.1 + 0.2, "usd") == 30  # binary float noise is still accepted
+
+
 def test_currency_exponents_follow_iso_4217() -> None:
     assert major_to_minor(500, "jpy") == 500
     assert major_to_minor("10.000", "kwd") == 10000

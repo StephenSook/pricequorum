@@ -1,7 +1,9 @@
 """Airtable, the derived SKU catalogue. Follows Stripe, never the other way.
 
-Writes are upserts merged on pq_plan_id with JSON numbers. After a 429 the adapter waits the
-30 seconds Airtable asks for. The Locked checkbox is read before every write.
+A price write updates the one known record through the single-record endpoint with typecast off.
+That call cannot create a record, so if the record was deleted after it was read, the write fails
+instead of silently adding a duplicate. After a 429 the adapter waits the 30 seconds Airtable
+asks for. The Locked checkbox, the pq_plan_id and the Currency are checked before every write.
 """
 
 from __future__ import annotations
@@ -17,6 +19,7 @@ import httpx
 from pricequorum.adapters._http import Sleep, airtable_penalty, request_json
 from pricequorum.adapters._money import major_json_number, major_to_minor
 from pricequorum.ports import (
+    AdapterFault,
     AdapterRefusal,
     AppName,
     FaultInjector,
@@ -29,6 +32,9 @@ from pricequorum.ports import (
 
 AIRTABLE_API = "https://api.airtable.com/v0"
 _INTERVALS: tuple[Interval, ...] = ("month", "year")
+# The call site name predates the switch from upsert to single-record update. It is kept because
+# fault plans and run events already refer to it.
+WRITE_CALL_SITE = "airtable.upsert"
 
 
 def _remedy(status: int, body: dict[str, Any]) -> str:
@@ -41,6 +47,17 @@ def _remedy(status: int, body: dict[str, Any]) -> str:
     if kind == "INVALID_VALUE_FOR_COLUMN" or status == 422:
         return "Check the table has pq_plan_id (text), Name, Price (number), Currency, Interval and Locked (checkbox)."
     return "Check the Airtable base configuration and try again."
+
+
+def _record_fields(body: dict[str, Any], call_site: str, expected_id: str | None) -> dict[str, Any]:
+    """Checks the body is a record (and the requested one). A malformed success body is a fault."""
+    fields = body.get("fields")
+    record_id = body.get("id")
+    if not isinstance(record_id, str) or not isinstance(fields, dict):
+        raise AdapterFault("server_5xx", call_site, False, "Airtable answered without a readable record")
+    if expected_id is not None and record_id != expected_id:
+        raise AdapterFault("server_5xx", call_site, False, "Airtable answered with a different record than requested")
+    return fields
 
 
 class AirtableAdapter:
@@ -91,8 +108,7 @@ class AirtableAdapter:
         )
 
     @staticmethod
-    def _parse(record: dict[str, Any]) -> PlanRecord:
-        fields = record.get("fields") or {}
+    def _parse(record_id: str, fields: dict[str, Any]) -> PlanRecord:
         currency_value = fields.get("Currency")
         currency = currency_value.lower() if isinstance(currency_value, str) and currency_value else None
         number = fields.get("Price")
@@ -108,35 +124,51 @@ class AirtableAdapter:
         pq_plan_id = fields.get("pq_plan_id")
         return PlanRecord(
             app="airtable",
-            external_id=str(record.get("id")),
+            external_id=record_id,
             pq_plan_id=str(pq_plan_id) if pq_plan_id else None,
             label=str(fields.get("Name") or ""),
             price=price,
             raw_value=None if number is None else str(number),
             interval=interval if interval in _INTERVALS else None,
-            locked=bool(fields.get("Locked", False)),
+            locked=fields.get("Locked") is True,
         )
 
     def list_plans(self) -> list[PlanRecord]:
         plans: list[PlanRecord] = []
         offset: str | None = None
+        call_site = "airtable.list"
         while True:
             params: dict[str, Any] = {"pageSize": 100}
             if offset:
                 params["offset"] = offset
-            page = self._request("airtable.list", "GET", params=params)
-            plans.extend(self._parse(record) for record in page.get("records") or [])
+            page = self._request(call_site, "GET", params=params)
+            records = page.get("records")
+            if not isinstance(records, list):
+                raise AdapterFault("server_5xx", call_site, False, "Airtable answered a list without a records array")
+            for record in records:
+                if not isinstance(record, dict):
+                    raise AdapterFault("server_5xx", call_site, False, "Airtable listed a record that is not an object")
+                plans.append(self._parse(str(record.get("id")), _record_fields(record, call_site, None)))
             offset = page.get("offset")
             if not offset:
                 return plans
 
-    def _record(self, record_id: str) -> PlanRecord:
-        return self._parse(self._request("airtable.record.retrieve", "GET", f"/{record_id}"))
+    def _fetch(self, record_id: str) -> tuple[PlanRecord, dict[str, Any]]:
+        call_site = "airtable.record.retrieve"
+        fields = _record_fields(self._request(call_site, "GET", f"/{record_id}"), call_site, record_id)
+        return self._parse(record_id, fields), fields
 
     def write_price(self, external_id: str, amount: Money, idempotency_key: str) -> WriteResult:
-        # An upsert that sets an absolute value, merged on pq_plan_id, is idempotent by construction.
-        current = self._record(external_id)
-        if current.locked:
+        # Setting an absolute value on one known record id is idempotent and can never create a record.
+        current, fields = self._fetch(external_id)
+        locked = fields.get("Locked", False)  # Airtable omits an unchecked checkbox
+        if not isinstance(locked, bool):
+            raise AdapterRefusal(
+                "airtable",
+                "The Airtable record's Locked field is not a checkbox, so PriceQuorum cannot tell whether it may change.",
+                "Make Locked a checkbox field in the Airtable table.",
+            )
+        if locked:
             raise AdapterRefusal(
                 "airtable",
                 f"The Airtable record {current.label or external_id} is locked.",
@@ -148,36 +180,27 @@ class AirtableAdapter:
                 "The Airtable record has no pq_plan_id, so it cannot be matched safely.",
                 "Add a pq_plan_id to the Airtable record that matches the Stripe product and the Notion row.",
             )
-        if current.price is not None and current.price.currency != amount.currency:
+        currency_value = fields.get("Currency")
+        if not isinstance(currency_value, str) or not currency_value.strip():
             raise AdapterRefusal(
                 "airtable",
-                f"The Airtable record is priced in {current.price.currency}, not {amount.currency}.",
+                "The Airtable record has no Currency, so the price being replaced cannot be checked.",
+                "Set Currency on the Airtable record to the currency Stripe bills this plan in.",
+            )
+        if currency_value.strip().lower() != amount.currency:
+            raise AdapterRefusal(
+                "airtable",
+                f"The Airtable record is priced in {currency_value.strip().lower()}, not {amount.currency}.",
                 "Change the plan that is priced in this currency, or fix the Currency on the Airtable record.",
             )
-        body = {
-            "performUpsert": {"fieldsToMergeOn": ["pq_plan_id"]},
-            "records": [
-                {
-                    "fields": {
-                        "pq_plan_id": current.pq_plan_id,
-                        "Price": major_json_number(amount.minor_units, amount.currency),
-                    }
-                }
-            ],
-        }
-        result = self._request("airtable.upsert", "PATCH", json=body)
-        self._faults.after("airtable.upsert")
-        if result.get("createdRecords"):
-            raise AdapterRefusal(
-                "airtable",
-                "The upsert created a new Airtable record instead of updating the existing one.",
-                "Make pq_plan_id unique in the Airtable table, then delete the duplicate record.",
-            )
-        updated = result.get("updatedRecords") or [record.get("id") for record in result.get("records") or []]
-        return WriteResult(external_object_id=str(updated[0]) if updated else external_id)
+        body = {"fields": {"Price": major_json_number(amount.minor_units, amount.currency)}, "typecast": False}
+        result = self._request(WRITE_CALL_SITE, "PATCH", f"/{external_id}", json=body)
+        _record_fields(result, WRITE_CALL_SITE, external_id)
+        self._faults.after(WRITE_CALL_SITE)
+        return WriteResult(external_object_id=external_id)
 
     def read_back(self, external_id: str) -> Readback:
-        record = self._record(external_id)
+        record, _ = self._fetch(external_id)
         return Readback(
             app="airtable",
             value=record.price,

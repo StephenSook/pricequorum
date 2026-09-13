@@ -56,37 +56,85 @@ def generic_remedy(status: int, body: dict[str, Any]) -> str:
     return "Check the credentials and ids in the environment, then run the seed again."
 
 
-def seed_stripe(key: str) -> None:
+def _field(obj: Any, key: str) -> Any:
+    """Reads a field from a Stripe object or a plain dict."""
+    if obj is None:
+        return None
+    try:
+        return obj[key]
+    except (KeyError, TypeError):
+        return getattr(obj, key, None)
+
+
+def _id_of(value: Any) -> str | None:
+    if value is None or isinstance(value, str):
+        return value
+    found = _field(value, "id")
+    return str(found) if found else None
+
+
+def _price_matches(price: Any, product_id: str, plan: SeedPlan) -> bool:
+    return (
+        _id_of(_field(price, "product")) == product_id
+        and _field(price, "unit_amount") == plan.minor_units
+        and _field(price, "currency") == plan.currency
+        and _field(_field(price, "recurring"), "interval") == plan.interval
+    )
+
+
+def seed_stripe(key: str, client: Any = None) -> None:
+    """Reconciles each plan's product, lookup-key price and default price independently.
+
+    A run interrupted after creating the product but before the price or the default is repaired on
+    the next run instead of skipped.
+    """
     StripeAdapter(key, NoFaults())  # refuses a live key before any request
-    client = stripe.StripeClient(key, max_network_retries=2)
-    existing = {
-        (product["metadata"] or {}).get("pq_plan_id"): product
-        for product in client.v1.products.list({"active": True, "limit": 100}).data
-    }
+    client = client or stripe.StripeClient(key, max_network_retries=2)
+    by_plan: dict[str, Any] = {}
+    for product in client.v1.products.list({"active": True, "limit": 100}).auto_paging_iter():
+        pq_plan_id = _field(_field(product, "metadata") or {}, "pq_plan_id")
+        if pq_plan_id and pq_plan_id not in by_plan:
+            by_plan[pq_plan_id] = product
+
     for plan in PLANS:
-        if plan.pq_plan_id in existing:
-            print(f"stripe: {plan.pq_plan_id} already exists as {existing[plan.pq_plan_id]['id']}")
-            continue
-        product = client.v1.products.create(
-            {"name": plan.name, "metadata": {"pq_plan_id": plan.pq_plan_id}},
-            {"idempotency_key": f"pq-seed:{plan.pq_plan_id}:product:v1"},
-        )
-        price = client.v1.prices.create(
-            {
-                "product": product["id"],
-                "unit_amount": plan.minor_units,
-                "currency": plan.currency,
-                "recurring": {"interval": plan.interval},  # type: ignore[typeddict-item]
-                "lookup_key": plan.lookup_key,
-                "transfer_lookup_key": True,
-            },
-            {"idempotency_key": f"pq-seed:{plan.pq_plan_id}:price:v1"},
-        )
-        client.v1.products.update(
-            product["id"], {"default_price": price["id"]}, {"idempotency_key": f"pq-seed:{plan.pq_plan_id}:default:v1"}
-        )
+        product = by_plan.get(plan.pq_plan_id)
+        if product is None:
+            product = client.v1.products.create(
+                {"name": plan.name, "metadata": {"pq_plan_id": plan.pq_plan_id}},
+                {"idempotency_key": f"pq-seed:{plan.pq_plan_id}:product:v1"},
+            )
+            print(f"stripe: created product {plan.pq_plan_id} as {_field(product, 'id')}")
+        else:
+            print(f"stripe: product {plan.pq_plan_id} already exists as {_field(product, 'id')}")
+        product_id = str(_field(product, "id"))
+
+        listed = client.v1.prices.list({"lookup_keys": [plan.lookup_key], "active": True, "limit": 10})
+        price = next((p for p in listed.auto_paging_iter() if _price_matches(p, product_id, plan)), None)
         amount = f"{plan.minor_units} {plan.currency}"
-        print(f"stripe: created {plan.pq_plan_id} as {product['id']} with {price['id']} ({amount})")
+        if price is None:
+            price = client.v1.prices.create(
+                {
+                    "product": product_id,
+                    "unit_amount": plan.minor_units,
+                    "currency": plan.currency,
+                    "recurring": {"interval": plan.interval},
+                    "lookup_key": plan.lookup_key,
+                    "transfer_lookup_key": True,
+                },
+                {"idempotency_key": f"pq-seed:{plan.pq_plan_id}:price:{product_id}:{amount}:{plan.interval}"},
+            )
+            print(f"stripe: created price {_field(price, 'id')} for {plan.pq_plan_id} ({amount})")
+        else:
+            print(f"stripe: price {_field(price, 'id')} for {plan.pq_plan_id} already exists ({amount})")
+        price_id = str(_field(price, "id"))
+
+        if _id_of(_field(product, "default_price")) != price_id:
+            client.v1.products.update(
+                product_id,
+                {"default_price": price_id},
+                {"idempotency_key": f"pq-seed:{plan.pq_plan_id}:default:{price_id}"},
+            )
+            print(f"stripe: set {price_id} as the default price of {plan.pq_plan_id}")
 
 
 def notion_request(client: httpx.Client, token: str, method: str, path: str, body: dict[str, Any]) -> dict[str, Any]:
