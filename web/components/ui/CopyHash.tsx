@@ -11,7 +11,7 @@ export function CopyHash({ value, label }: { value: string | null; label: string
   const [state, setState] = useState<CopyState>("idle");
 
   if (!value) {
-    return <span className="type-hash text-sm text-ink-soft/70">not reported</span>;
+    return <span className="type-hash text-sm text-ink-soft">not reported</span>;
   }
 
   const copy = async () => {

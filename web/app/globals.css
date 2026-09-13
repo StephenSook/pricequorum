@@ -18,7 +18,8 @@
   --color-brass: #ac9b6e;
 
   --color-outcome-success: #3f6b2a;
-  --color-outcome-needs-human: #9a6412;
+  /* Darkened from #9a6412, which measured 4.02:1 on paper; #7f500d measures 5.54:1 (WCAG AA). */
+  --color-outcome-needs-human: #7f500d;
   --color-outcome-refused: #a3262a;
   --color-outcome-partial: #a3262a;
 
