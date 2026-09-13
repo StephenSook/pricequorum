@@ -2,7 +2,11 @@
 
 An agent that changes a SaaS plan's published price once, correctly, across Stripe, Notion, and Airtable, gated by a human approval in Slack, and proves it by reading every system back.
 
-**Status:** building (Multi-App AI Agent Hackathon, September 13, 2026). This README is a stub and will be replaced with the quickstart, the live URL, the published ledger public key, and the evaluation results.
+**Live:** https://pricequorum-web.vercel.app
+
+**Status (Multi-App AI Agent Hackathon, September 13, 2026):** the web app is deployed and checked on every push. The backend is still being built. Until it is deployed, starting a run shows that the backend is not configured, and every page that needs backend data says so instead of showing placeholder numbers.
+
+## How it works
 
 | App | Role |
 |---|---|
@@ -11,6 +15,48 @@ An agent that changes a SaaS plan's published price once, correctly, across Stri
 | Airtable | Derived SKU catalogue. Follows Stripe, never the other way. |
 | Slack | Human approval gate before any consequential write. |
 
-Team coordination lives in [PLAN.md](PLAN.md). The API contract lives in [docs/contracts/api.md](docs/contracts/api.md).
+A run is reported as SUCCESS only after a fresh read of all three apps agrees. Every write is recorded in a hash-chained ledger whose head is signed with Ed25519.
+
+## Pages
+
+| Route | What it does | Needs the backend |
+|---|---|---|
+| `/` | Type a price change and follow the run as it happens | Yes, to start a run |
+| `/runs/[id]` | The receipt for one run, rebuilt from its recorded events | Yes |
+| `/verify` | Recomputes the ledger hash chain and checks the head signature in your browser | Yes, for the ledger export |
+| `/evals` | Scenario pass rate, refusals, duplicate writes prevented, named failures | Yes |
+| `/judges` | A short tour that marks each stop live only after the backend answers | No |
+
+## How the web app is checked
+
+- `.github/workflows/web.yml` runs on every push to `web/`: contract drift check, typecheck, lint, unit tests, production build.
+- `.github/workflows/deployed-smoke.yml` fetches the live site every 30 minutes and on push, and fails unless the page and its assets are really served.
+- `web/tests/e2e/a11y.spec.ts` runs axe (WCAG 2.1 A and AA) against the deployed site on desktop and mobile.
+- The browser ledger verifier is tested against hashes computed independently with Python's `hashlib`.
+
+## Run the web app locally
+
+```
+cd web
+npm ci
+npm run dev
+```
+
+Set `NEXT_PUBLIC_API_BASE_URL` to the backend address (see `.env.example`). Checks:
+
+```
+npm run typecheck
+npm run lint
+npm run test
+npm run build
+BASE_URL=http://localhost:3000 npm run e2e
+```
+
+## Repository
+
+- `web/`: Next.js app (App Router, Tailwind 4, GSAP)
+- `backend/`: FastAPI service (in progress)
+- `docs/contracts/api.md`: the API and event-stream contract between the two
+- `PLAN.md`: task status and ownership
 
 License: MIT.
