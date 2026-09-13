@@ -3,7 +3,7 @@
  *
  * The headline number must come from the backend exactly as reported. Required fields are
  * validated; optional fields the backend omitted stay null and are shown as "not reported",
- * never filled with zero.
+ * never filled with zero. A malformed field the page would summarise rejects the response.
  */
 import { OUTCOMES, type Outcome } from "@/lib/api/events";
 
@@ -14,7 +14,8 @@ export type Proof = {
   outcomes: Record<Outcome, number> | null;
   duplicateWritesPrevented: number | null;
   forbiddenRefused: { refused: number; attempted: number } | null;
-  namedFailures: { scenarioId: string; explanation: string }[];
+  /** null when the backend sent no list, which is not the same as an empty list. */
+  namedFailures: { scenarioId: string; explanation: string }[] | null;
   ledger: { entries: number | null; chainIntact: boolean | null; signatureValid: boolean | null } | null;
   liveRuns: { total: number; success: number } | null;
   lastEvalRunAt: string | null;
@@ -73,14 +74,23 @@ export function parseProof(body: unknown): Parsed<Proof> {
   const refusedBlock = isRecord(body.forbidden_actions_refused) ? body.forbidden_actions_refused : null;
   const refused = refusedBlock ? count(refusedBlock.refused) : null;
   const attempted = refusedBlock ? count(refusedBlock.attempted) : null;
+  if (refused !== null && attempted !== null && refused > attempted) {
+    reasons.push(`forbidden_actions_refused.refused (${refused}) is greater than attempted (${attempted}).`);
+  }
 
-  const namedFailures = Array.isArray(body.named_failures)
-    ? body.named_failures.flatMap((f) =>
-        isRecord(f) && typeof f.scenario_id === "string" && typeof f.explanation === "string"
-          ? [{ scenarioId: f.scenario_id, explanation: f.explanation }]
-          : [],
-      )
-    : [];
+  let namedFailures: Proof["namedFailures"] = null;
+  if (Array.isArray(body.named_failures)) {
+    namedFailures = [];
+    body.named_failures.forEach((f, index) => {
+      if (isRecord(f) && typeof f.scenario_id === "string" && typeof f.explanation === "string") {
+        namedFailures!.push({ scenarioId: f.scenario_id, explanation: f.explanation });
+      } else {
+        reasons.push(`named_failures entry at position ${index} is missing scenario_id or explanation.`);
+      }
+    });
+  } else if (body.named_failures !== undefined && body.named_failures !== null) {
+    reasons.push("named_failures must be a list.");
+  }
 
   const ledgerBlock = isRecord(body.ledger) ? body.ledger : null;
   const liveBlock = isRecord(body.live_runs) ? body.live_runs : null;

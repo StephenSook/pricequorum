@@ -44,6 +44,19 @@ describe("parseProof", () => {
     expect(parseProof({ scenarios: { passed: 19.5, total: 20 } }).ok).toBe(false);
   });
 
+  it("keeps a missing named failures list distinct from an empty one", () => {
+    const missing = parseProof({ scenarios: { passed: 19, total: 20 } });
+    const empty = parseProof({ scenarios: { passed: 20, total: 20 }, named_failures: [] });
+    expect(missing.ok && missing.value.namedFailures).toBeNull();
+    expect(empty.ok && empty.value.namedFailures).toEqual([]);
+  });
+
+  it("rejects a malformed named failure and more refusals than attempts", () => {
+    expect(parseProof({ scenarios: { passed: 1, total: 2 }, named_failures: [{ scenario_id: "x" }] }).ok).toBe(false);
+    expect(parseProof({ scenarios: { passed: 1, total: 2 }, named_failures: "none" }).ok).toBe(false);
+    expect(parseProof({ scenarios: { passed: 1, total: 2 }, forbidden_actions_refused: { refused: 3, attempted: 2 } }).ok).toBe(false);
+  });
+
   it("rejects a confidence interval outside 0 to 1 or out of order", () => {
     expect(parseProof({ scenarios: { passed: 1, total: 2, wilson_95: [0.9, 0.2] } }).ok).toBe(false);
     expect(parseProof({ scenarios: { passed: 1, total: 2, wilson_95: [0.1, 1.4] } }).ok).toBe(false);

@@ -7,6 +7,8 @@ import { API_BASE } from "@/lib/api/client";
 import { OUTCOMES } from "@/lib/api/events";
 import { parseEvalReport, parseProof, type EvalReport, type Proof } from "@/lib/api/proof";
 
+const FETCH_TIMEOUT_MS = 15_000;
+
 type State =
   | { kind: "loading" }
   | { kind: "unconfigured" }
@@ -17,12 +19,18 @@ type State =
 const percent = (p: number) => `${Math.round(p * 1000) / 10}%`;
 
 async function fetchJson(path: string): Promise<{ ok: true; body: unknown } | { ok: false; detail: string }> {
+  let res: Response;
   try {
-    const res = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
-    if (!res.ok) return { ok: false, detail: `${path} answered with status ${res.status}.` };
+    res = await fetch(`${API_BASE}${path}`, { cache: "no-store", signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+  } catch (err) {
+    console.warn(`[PriceQuorum] ${path} could not be fetched`, err);
+    return { ok: false, detail: `${path} at ${API_BASE} is not reachable or did not answer in time.` };
+  }
+  if (!res.ok) return { ok: false, detail: `${path} answered with status ${res.status}.` };
+  try {
     return { ok: true, body: await res.json() };
   } catch {
-    return { ok: false, detail: `${path} at ${API_BASE} is not reachable.` };
+    return { ok: false, detail: `${path} answered, but not with JSON.` };
   }
 }
 
@@ -32,6 +40,52 @@ function Stat({ value, label }: { value: string; label: string }) {
       <p className="type-display text-3xl text-ink [text-shadow:none]">{value}</p>
       <p className="mt-1 text-sm text-ink-soft">{label}</p>
     </div>
+  );
+}
+
+function ledgerValue(ledger: Proof["ledger"]): string {
+  if (!ledger || ledger.chainIntact === null) return "not reported";
+  if (!ledger.chainIntact) return "broken";
+  if (ledger.signatureValid === false) return "signature invalid";
+  if (ledger.signatureValid === true) return "intact, signed";
+  return "intact, unsigned";
+}
+
+function NamedFailures({ proof }: { proof: Proof }) {
+  const failed = proof.scenarios.total - proof.scenarios.passed;
+  const named = proof.namedFailures;
+  const s = (n: number) => (n === 1 ? "" : "s");
+
+  if (named && named.length > 0) {
+    return (
+      <>
+        <ul className="mt-2 space-y-2">
+          {named.map((f, index) => (
+            <li key={`${f.scenarioId}-${index}`} className="rounded-md border-l-4 border-outcome-refused bg-paper-light/70 px-4 py-2">
+              <span className="type-hash font-semibold">{f.scenarioId}</span>
+              <span className="text-ink-soft">: {f.explanation}</span>
+            </li>
+          ))}
+        </ul>
+        {named.length < failed ? (
+          <p className="mt-2 font-semibold text-outcome-needs-human">
+            {failed - named.length} more failed scenario{s(failed - named.length)} {failed - named.length === 1 ? "was" : "were"} not named.
+          </p>
+        ) : null}
+      </>
+    );
+  }
+  if (failed > 0) {
+    return (
+      <p className="mt-1 font-semibold text-outcome-needs-human">
+        {failed} scenario{s(failed)} failed, but the backend {named === null ? "sent no list of named failures" : "named none of them"}.
+      </p>
+    );
+  }
+  return (
+    <p className="mt-1 text-ink-soft">
+      {named === null ? "Every scenario passed. The backend sent no list of named failures." : "The backend reported no failed scenarios."}
+    </p>
   );
 }
 
@@ -74,8 +128,9 @@ export function ProofBoard() {
         The evidence
       </h1>
       <p className="mt-3 max-w-[64ch] leading-relaxed text-ink-soft">
-        Every number on this page is recomputed by the backend from its own database when the page loads. Failed
-        scenarios are listed with their explanation rather than hidden.
+        The headline numbers are recomputed by the backend from its own database each time this page loads. The
+        per-scenario table is the latest stored evaluation report. Failed scenarios are listed with their explanation
+        rather than hidden.
       </p>
 
       <div className="mt-6">
@@ -87,7 +142,7 @@ export function ProofBoard() {
         ) : null}
         {state.kind === "unreachable" ? (
           <p role="alert" className="font-semibold text-outcome-needs-human">
-            {state.detail} Try again once the backend is online.
+            {state.detail} Try again in a moment.
           </p>
         ) : null}
         {state.kind === "invalid" ? (
@@ -130,13 +185,7 @@ export function ProofBoard() {
                 label="forbidden actions refused"
               />
               <Stat
-                value={
-                  state.proof.ledger?.chainIntact === true
-                    ? "intact"
-                    : state.proof.ledger?.chainIntact === false
-                      ? "broken"
-                      : "not reported"
-                }
+                value={ledgerValue(state.proof.ledger)}
                 label={`ledger chain${state.proof.ledger?.entries != null ? `, ${state.proof.ledger.entries} entries` : ""}`}
               />
             </div>
@@ -156,18 +205,7 @@ export function ProofBoard() {
 
             <div>
               <h2 className="text-lg font-semibold">Named failures</h2>
-              {state.proof.namedFailures.length === 0 ? (
-                <p className="mt-1 text-ink-soft">The backend reported no failed scenarios.</p>
-              ) : (
-                <ul className="mt-2 space-y-2">
-                  {state.proof.namedFailures.map((f) => (
-                    <li key={f.scenarioId} className="rounded-md border-l-4 border-outcome-refused bg-paper-light/70 px-4 py-2">
-                      <span className="type-hash font-semibold">{f.scenarioId}</span>
-                      <span className="text-ink-soft">: {f.explanation}</span>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <NamedFailures proof={state.proof} />
             </div>
 
             <div>
@@ -185,8 +223,8 @@ export function ProofBoard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {state.report.results.map((r) => (
-                        <tr key={r.scenarioId} className="border-b border-ink/10 align-top">
+                      {state.report.results.map((r, index) => (
+                        <tr key={`${r.scenarioId}-${index}`} className="border-b border-ink/10 align-top">
                           <td className="type-hash py-2 pr-4">{r.scenarioId}</td>
                           <td className="py-2 pr-4">{r.expectedOutcome ?? "not reported"}</td>
                           <td className="py-2 pr-4">{r.observedOutcome ?? "not reported"}</td>
