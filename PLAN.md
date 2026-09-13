@@ -114,12 +114,12 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 3.11 | Arga twins spike, 30 minute cap, keep only if it writes | `backend/evals/` | Khadim | ⬜ | 3.1 | |
 | 3.12 | Mutation-test the eval gates both directions | `backend/evals/` | Khadim | ⬜ | 3.1 | |
 | 3.13 | `/verify`: browser recomputes JCS + SHA-256 chain, verifies Ed25519 signature, tamper toggle | `web/app/verify/` `web/lib/verify/` | Stephen | 🟡 | 3.4 | Built and live; 12 tests incl. golden vectors matching Python hashlib. Unverified against a real export until 3.4 exists |
-| 3.14 | Proof + `/evals` board | `web/app/evals/` | Stephen | ⬜ | 3.5 | |
+| 3.14 | Proof + `/evals` board | `web/app/evals/` `web/components/proof/` `web/lib/api/proof.ts` | Stephen | 🟡 | 3.5 | Built and live with validated parsers and 7 tests; shows an honest unavailable state until 3.5 exists |
 | 3.15 | `/break` judge panel streaming chapters live | `web/app/break/` | Stephen | ⬜ | 3.7 | |
 | 3.16 | Live drift strip | `web/components/DriftStrip.tsx` | Stephen | ⬜ | 3.6 | |
 | 3.17 | `/judges` itinerary with deep links and curl commands | `web/app/judges/` `web/components/JudgeTour.tsx` | Stephen | ✅ | 3.5 | Live; backend stops marked live only after a browser health check succeeds |
 | 3.18 | Sound design + subtitles toggle (muted by default) | `web/components/Sound*.tsx` | Stephen | ⬜ | 1.14 | |
-| 3.19 | Mobile pass, axe, Lighthouse | `web/` `web/tests/e2e/` | Stephen | 🟡 | 2.16 | 14:00 ET. axe WCAG 2.1 AA 6/6 on production (desktop + mobile); mobile stills reviewed; Lighthouse not run yet |
+| 3.19 | Mobile pass, axe, Lighthouse | `web/` `web/tests/e2e/` | Stephen | ✅ | 2.16 | 13:46 ET. axe WCAG 2.1 AA 10/10 on production (5 pages, desktop + mobile); Lighthouse accessibility, best practices and SEO 100 on `/judges` desktop and `/` mobile; performance not measured |
 | 3.20 | Deployed smoke workflow against the live URL | `.github/workflows/deployed-smoke.yml` | Stephen | 🟡 | 2.11 | Page and asset checks green on `9b13a6e`; add `/api/health` and a run once the backend is deployed |
 
 **CHECKPOINT 4:45 PM ET: midpoint rubric re-audit. Count what each criterion's surface shows today, fix the weakest.**
