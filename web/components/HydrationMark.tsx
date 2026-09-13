@@ -9,3 +9,13 @@ export function HydrationMark() {
   }, []);
   return null;
 }
+
+/**
+ * Marks the document once a route's own client component has mounted. The shared root marker
+ * cannot prove that, because it lives in a different JavaScript chunk from the route.
+ */
+export function useRouteReady(route: string) {
+  useEffect(() => {
+    document.documentElement.dataset.routeReady = route;
+  }, [route]);
+}

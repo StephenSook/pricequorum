@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 
+import { useRouteReady } from "@/components/HydrationMark";
 import { CopyHash } from "@/components/ui/CopyHash";
 import { API_BASE } from "@/lib/api/client";
 import { parseLedgerExport, tamperCopy, verifyLedger, type ChainVerification, type LedgerExport } from "@/lib/verify/chain";
@@ -38,6 +39,7 @@ function Verdict({ result, head, label }: { result: ChainVerification; head: str
 const reasonOf = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 export function LedgerVerifier() {
+  useRouteReady("verify");
   const [state, setState] = useState<LoadState>(() => (API_BASE ? { kind: "loading" } : { kind: "unconfigured" }));
   const [tampered, setTampered] = useState<Tampered>(null);
 

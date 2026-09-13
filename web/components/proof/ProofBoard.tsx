@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { useRouteReady } from "@/components/HydrationMark";
 import { API_BASE } from "@/lib/api/client";
 import { OUTCOMES } from "@/lib/api/events";
 import { parseEvalReport, parseProof, type EvalReport, type Proof } from "@/lib/api/proof";
@@ -90,6 +91,7 @@ function NamedFailures({ proof }: { proof: Proof }) {
 }
 
 export function ProofBoard() {
+  useRouteReady("evals");
   const [state, setState] = useState<State>(() => (API_BASE ? { kind: "loading" } : { kind: "unconfigured" }));
 
   useEffect(() => {

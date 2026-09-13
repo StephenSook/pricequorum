@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+import { useRouteReady } from "@/components/HydrationMark";
 import { API_BASE, checkHealth } from "@/lib/api/client";
 import { parseProof } from "@/lib/api/proof";
 import { parseLedgerExport } from "@/lib/verify/chain";
@@ -101,6 +102,7 @@ function stateOf(stop: Stop, health: Health, probes: Partial<Record<ProbeName, b
 }
 
 export function JudgeTour() {
+  useRouteReady("judges");
   const [health, setHealth] = useState<Health>(API_BASE ? "checking" : "offline");
   const [probes, setProbes] = useState<Partial<Record<ProbeName, boolean>>>({});
 

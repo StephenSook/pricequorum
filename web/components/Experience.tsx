@@ -6,6 +6,7 @@ import { Ticket } from "@/components/chapters/Ticket";
 import { Preloader } from "@/components/motion/Preloader";
 import { RoughFrame } from "@/components/motion/RoughFrame";
 import { SceneBackdrop } from "@/components/motion/SceneBackdrop";
+import { useRouteReady } from "@/components/HydrationMark";
 import { RunStage } from "@/components/RunStage";
 import { ApiError, checkHealth, createRun, type HealthCheck } from "@/lib/api/client";
 
@@ -41,6 +42,7 @@ function healthPill(health: HealthCheck): { dot: string; text: string } {
 type RunError = { message: string; remedy: string | null };
 
 export function Experience() {
+  useRouteReady("home");
   const [ready, setReady] = useState(false);
   const [health, setHealth] = useState<HealthCheck | null>(null);
   const [preloaderGone, setPreloaderGone] = useState(false);

@@ -7,6 +7,7 @@ import { Migrate } from "@/components/chapters/Migrate";
 import { Receipt } from "@/components/chapters/Receipt";
 import { Resolve } from "@/components/chapters/Resolve";
 import { Verify } from "@/components/chapters/Verify";
+import { useRouteReady } from "@/components/HydrationMark";
 import { currentChapter } from "@/lib/api/events";
 import { prefersReducedMotion } from "@/lib/motion/prefersReducedMotion";
 import { useRunEvents, type StreamState } from "@/lib/api/useRunEvents";
@@ -46,6 +47,7 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
  * belongs to it, so the page never runs ahead of what actually happened.
  */
 export function RunStage({ runId }: { runId: string }) {
+  useRouteReady("run");
   const { view, stream, invalidMessages } = useRunEvents(runId);
   const chapter = view ? currentChapter(view) : "waiting";
   const end = useRef<HTMLDivElement>(null);
