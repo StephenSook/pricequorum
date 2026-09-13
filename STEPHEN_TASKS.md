@@ -51,6 +51,23 @@ Deadline: **7:00 PM ET submission**, confirmation verified by 6:55 ET.
 - [x] **3.19** axe WCAG 2.1 AA 10/10 on production, mobile stills reviewed, Lighthouse accessibility, best practices and SEO 100. Performance trace on `/`: LCP 268 ms and CLS 0 on desktop, LCP 1025 ms and CLS 0 on mobile with Slow 4G and 4x CPU
 - [-] **3.20** `deployed-smoke.yml` live and green. Add `/api/health` and a real run once the backend is deployed
 
+## Mobile (added 2026-09-13)
+
+- [x] **M.1** Expo SDK 57 app in `mobile/`: run screen, receipt, on-device ledger verify, evidence, settings with backend address; shared logic synced from `web/` with a CI drift check
+- [x] **M.2** iOS: App Store Connect app 6811667691, build 2 uploaded and VALID, internal TestFlight live, external beta review submitted, privacy URL set
+- [x] **M.3** Android: signed APK published as GitHub Release v1.0.0, download verified byte-identical
+- [x] **M.4** Brand icon generated with kie.ai and applied to web and mobile
+
+## Backend takeover (added 2026-09-13, Tylin and Khadim did not join)
+
+- [x] **B.1** Adapter seam `backend/pricequorum/ports.py`; Stripe, Notion, Airtable, Slack adapters, fault injector, seed, reset, live check (34 tests)
+- [-] **B.2** Core: schema, ledger chain and signing, SSE with events.json, orchestrator, resolver, policy, intent, approval flow, verifier with `invariants_expected`, API, OpenAPI export, backend CI
+- [-] **B.3** Evals: 20 scenario files, harness posting results, resolver labels, MCP server
+- [!] **B.4** Vendor credentials from Stephen (Stripe test key, Notion integration and page, Airtable token and base, Slack app tokens) via the Keychain script
+- [-] **B.5** Render free web service plus Render Postgres (created), env vars from Keychain without printing, Tulving health ping through judging
+- [ ] **B.6** Seed live apps, real run from the public URL and the mobile app, eval run with results on `/evals`, `/verify` against the real export
+- [ ] **B.7** Judge sandbox and drift monitor endpoints for `/break` and the drift strip
+
 ## Phase 4 (submission, all yours)
 
 - [ ] **4.1** Whole-repo fresh-eyes pass + second-model adversarial review
