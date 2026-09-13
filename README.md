@@ -72,7 +72,7 @@ A normal agent makes this worse: it calls three APIs, gets three `200 OK`s, and 
 You type the change in plain words ("Raise the Pro plan to $25 a month") from the web app, the phone app, or any MCP client.
 
 ```mermaid
-flowchart LR
+flowchart TD
   REQ["Plain-words request<br/>web, mobile or MCP"] --> INT["Parse into a typed intent<br/>rules first, Claude Haiku 4.5 for free text<br/>request text datamarked"]
   INT --> RES["Resolve the plan in all 3 apps<br/>exact pq_plan_id"]
   RES --> POL["policy.py<br/>imports no model"]
