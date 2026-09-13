@@ -73,20 +73,15 @@ Need something in `web/**` or `docs/**`? Put it under Open Questions in PLAN.md 
 - [ ] **2.10** Orchestrator emits the contract events in order, including `readback.recovery` when a fault fires.
 - [ ] **2.11** Deploy. Send Stephen the base URL.
 
-## Phase 3: Depth and judge-facing wow (until 5:45 PM ET)
+## Phase 3: Reliability depth (until 5:45 PM ET)
 
-- [ ] **3.1** Eval harness with all 20 scenarios from spec section 14. Report passed/total, per-outcome counts, runs per scenario, Wilson 95% interval, duplicate writes prevented, forbidden actions refused, named failures with explanations. Write rows to `eval_results`. `--ci` mode for Actions.
+Khadim owns the eval harness and scenarios (3.1, 3.1a), the resolver labeled set (2.5b), `/api/proof` (3.5), the drift monitor (3.6), the judge sandbox (3.7), the MCP server (3.10), the Arga twins spike (3.11) and eval mutation tests (3.12). See `KHADIM_TASKS.md`. Expose clean functions he can call: reset world, run a request with a fault name, read back all three systems.
+
 - [ ] **3.2** `pg_try_advisory_xact_lock(hashtext('plan:'||plan||':'||currency))` + partial unique index on active runs. Loser returns the winner's result or a clean REFUSED.
 - [ ] **3.3** Ed25519 head signature with PyNaCl, `/api/public-key`.
 - [ ] **3.4** `/api/ledger/export` and `/api/ledger/verify`. Payloads must contain no floats (JCS number rules).
-- [ ] **3.5** `/api/proof` recomputed from the database on each request.
-- [ ] **3.6** Drift monitor: poll derived surfaces every 10 s, emit `drift.detected`; heal writes Notion and Airtable only, never Stripe.
-- [ ] **3.7** Judge sandbox: isolated judge plan, rate limit, reset job; `chain_tamper` edits a sandbox copy of the chain only.
 - [ ] **3.8** Crash recovery: on startup, pending rows with no external id are resolved by reading back, then completed or retried with the same key.
 - [ ] **3.9** Test clock: one clock, up to three customers and subscriptions, migrate with `proration_behavior=none`, advance one interval, emit `renewal.invoice`.
-- [ ] **3.10** HTTP MCP server with tools `run_price_change`, `get_run`, `verify_chain`, `get_proof`, plus one working `curl` for the README.
-- [ ] **3.11** Arga twins spike (30 minute cap). Keep only if a write lands.
-- [ ] **3.12** Break each eval gate on purpose (for example flip an expected outcome) and confirm the suite goes red, then restore.
 
 ## Phase 4: Freeze
 
@@ -99,7 +94,7 @@ Need something in `web/**` or `docs/**`? Put it under Open Questions in PLAN.md 
 
 Everything in `docs/contracts/api.md`, generated as `shared/openapi.json`. Change a field only through a PR titled `⚠️ CONTRACT: field, reason`, and regenerate `shared/openapi.json` in the same PR.
 
-## Stripe details a former Stripe engineer will check
+## Stripe details to get exactly right
 
 | Wrong | Right |
 |---|---|
