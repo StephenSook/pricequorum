@@ -47,7 +47,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 0.6 | Supabase Postgres + `DATABASE_URL`; docker-compose Postgres fallback | `docker-compose.yml` | Tylin | ⬜ | n/a | |
 | 0.7 | OpenAI key; confirm Python `RunState` serialize/deserialize method names in the Agents SDK HITL guide | `.env` | Tylin | ⬜ | n/a | Spec CRITICAL open item |
 | 0.8 | Backend host project (Railway or Render), long-running process for Socket Mode | host | Tylin | ⬜ | n/a | |
-| 0.9 | Vercel project `pricequorum-web` created and linked from `web/` only | `web/.vercel` (ignored) | Stephen | ⬜ | 1.9 | Verify `.vercel/project.json` names `pricequorum-web` before every `--prod` |
+| 0.9 | Vercel project `pricequorum-web` created and linked from `web/` only | `web/.vercel` (ignored) `web/vercel.json` | Stephen | ✅ | 1.9 | 13:25 ET. Framework declared in `web/vercel.json` (project was created as "Other" and served only `public/`) |
 | 0.10 | Reference site study (screenshots, motion video) | local only | Stephen | ✅ | n/a | 13:00 ET |
 | 0.11 | Ledger-paper textures generated and optimized | `web/public/textures/` `web/public/scenes/` | Stephen | ✅ | 1.9 | kie.ai, plus painterly desk scene |
 
@@ -64,12 +64,12 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 1.7 | Seed and reset: Stripe product/prices with `pq_plan_id` metadata and lookup key, Notion rows, Airtable rows | `backend/evals/fixtures/` `Makefile` | Tylin | ⬜ | 0.2 0.3 0.4 | `make seed`, `make reset` idempotent |
 | 1.8 | Backend CI: ruff format check, ruff, mypy, pytest, pip-licenses, gitleaks | `.github/workflows/backend.yml` | Tylin | ⬜ | 1.1 | Every gate bare, no pipes |
 | 1.9 | Web scaffold: Next.js 16 App Router, Tailwind 4, fonts, tokens, ESLint, Vitest | `web/` | Stephen | ✅ | n/a | tsc and eslint clean |
-| 1.10 | Web CI: `openapi-typescript` drift check vs `shared/openapi.json`, tsc, eslint, vitest, build | `.github/workflows/web.yml` | Stephen | ⬜ | 1.9 | |
-| 1.11 | Generated types, API client, SSE hook with replay, run reducer + tests | `web/lib/api/` | Stephen | ⬜ | 1.3 | Fixtures typed from generated types, dev only |
-| 1.12 | Preloader: ribbons, logo clip reveal, min 2 s, waits for assets + `/api/health` | `web/components/motion/Preloader.tsx` | Stephen | 🟡 | 1.9 | 13:15 ET, built, visual pass |
-| 1.13 | Ticket intro + request form posting `/api/runs` | `web/components/chapters/Ticket.tsx` | Stephen | 🟡 | 1.11 | 13:15 ET, built, visual pass |
-| 1.14 | Motion primitives: reveal group, masked word reveal, word stagger, framing ribbons, CTA, reduced motion | `web/components/motion/` | Stephen | ⬜ | 1.9 | |
-| 1.15 | First Vercel deploy + served-bundle check | Vercel | Stephen | ⬜ | 0.9 | |
+| 1.10 | Web CI: `openapi-typescript` drift check vs `shared/openapi.json`, tsc, eslint, vitest, build | `.github/workflows/web.yml` | Stephen | ✅ | 1.9 | Green on `cbef0a5`, read from check-runs |
+| 1.11 | Generated types, API client, SSE hook with replay, run reducer + tests | `web/lib/api/` | Stephen | 🟡 | 1.3 | 13:25 ET. Client, reducer, replay-safe SSE hook and 15 unit tests done; generated types wait on `shared/openapi.json` |
+| 1.12 | Preloader: ribbons, logo clip reveal, min 2 s, waits for assets + `/api/health` | `web/components/motion/Preloader.tsx` | Stephen | ✅ | 1.9 | Visual pass on stills |
+| 1.13 | Ticket intro + request form posting `/api/runs` | `web/components/chapters/Ticket.tsx` | Stephen | ✅ | 1.11 | Visual pass on desktop and 390 px stills |
+| 1.14 | Motion primitives: reveal group, masked word reveal, word stagger, framing ribbons, CTA, reduced motion | `web/components/motion/` | Stephen | 🟡 | 1.9 | 13:25 ET. In components; reduced motion respected |
+| 1.15 | First Vercel deploy + served-bundle check | Vercel | Stephen | ✅ | 0.9 | Live at https://pricequorum-web.vercel.app, 7 served-page checks pass on `61cb695` |
 
 ### Phase 2: Full loop live (until 3:45 PM ET)
 
@@ -86,11 +86,11 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 2.9 | Verifier: fresh reads, minor-unit compare, invariant register, worst-class verdict | `backend/verifier/` | Tylin | ⬜ | 2.1 2.3 2.4 | |
 | 2.10 | Orchestrator emitting every event in contract order | `backend/api/routes_runs.py` | Tylin | ⬜ | 2.7 2.8 2.9 1.6 | |
 | 2.11 | Deploy backend; set `NEXT_PUBLIC_API_BASE_URL` on Vercel | host + Vercel | Tylin + Stephen | ⬜ | 2.10 | |
-| 2.12 | Chapter 01 Resolve | `web/components/chapters/Resolve.tsx` | Stephen | ⬜ | 1.11 | |
-| 2.13 | Chapter 02 Approve (mirrored Slack card, TTL countdown, labels for non-Slack modes) | `web/components/chapters/Approve.tsx` | Stephen | ⬜ | 1.11 | |
-| 2.14 | Chapter 03 Migrate (ledger sheet stamps, fault banner with `injected` label, read-back recovery) | `web/components/chapters/Migrate.tsx` | Stephen | ⬜ | 1.11 | |
-| 2.15 | Chapter 04 Verify (three paper columns, invariant bar) | `web/components/chapters/Verify.tsx` | Stephen | ⬜ | 1.11 | |
-| 2.16 | Receipt outro + `/runs/[id]` permalink | `web/app/runs/[id]/` `web/components/receipt/` | Stephen | ⬜ | 1.11 | |
+| 2.12 | Chapter 01 Resolve | `web/components/chapters/Resolve.tsx` | Stephen | 🟡 | 1.11 | Built; unverified until the backend emits real events |
+| 2.13 | Chapter 02 Approve (mirrored Slack card, TTL countdown, labels for non-Slack modes) | `web/components/chapters/Approve.tsx` | Stephen | 🟡 | 1.11 | Built; unverified until the backend emits real events |
+| 2.14 | Chapter 03 Migrate (ledger sheet stamps, fault banner with `injected` label, read-back recovery) | `web/components/chapters/Migrate.tsx` | Stephen | 🟡 | 1.11 | Built; unverified until the backend emits real events |
+| 2.15 | Chapter 04 Verify (three paper columns, invariant bar) | `web/components/chapters/Verify.tsx` | Stephen | 🟡 | 1.11 | Built; unverified until the backend emits real events |
+| 2.16 | Receipt outro + `/runs/[id]` permalink | `web/app/runs/[id]/` `web/components/chapters/Receipt.tsx` | Stephen | 🟡 | 1.11 | Receipt with outcome stamp built; `/runs/[id]` permalink not built yet |
 | 2.17 | WebGL paper hero shader + static fallback | `web/components/motion/PaperShader.tsx` | Stephen | ⬜ | 1.9 | |
 
 **CHECKPOINT 3:45 PM ET: one real request goes Slack approve, three writes, three read-backs, SUCCESS, rendered in the deployed UI. If not green, both lanes swarm the break before anything in Phase 3.**
