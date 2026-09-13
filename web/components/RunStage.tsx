@@ -53,8 +53,16 @@ export function RunStage({ runId }: { runId: string }) {
       </p>
 
       {chapter === "waiting" ? (
-        <p className="rounded-lg bg-forest/85 px-6 py-5 text-center text-paper-light">
-          Run accepted. Waiting for the first event from the backend.
+        <p role={stream === "unavailable" ? "alert" : undefined} className="rounded-lg bg-forest/85 px-6 py-5 text-center text-paper-light">
+          {stream === "unavailable"
+            ? "The backend address is not configured, so this run cannot be loaded."
+            : stream === "open"
+              ? "Connected. Waiting for the first event from the backend."
+              : stream === "reconnecting"
+                ? "The connection dropped. Reconnecting without losing events."
+                : stream === "closed"
+                  ? "The stream closed before any event arrived."
+                  : "Connecting to the run."}
         </p>
       ) : null}
 
