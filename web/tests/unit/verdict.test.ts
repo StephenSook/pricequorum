@@ -41,4 +41,12 @@ describe("verdictOf", () => {
   it("says an empty ledger has nothing to check instead of reporting a mismatch", () => {
     expect(verdictOf(result({ entries: 0, headMatches: false, signatureValid: null }), null).tone).toBe("caution");
   });
+
+  it("does not let an empty ledger hide a bad signature over its head", () => {
+    const zeroHead = "0".repeat(64);
+    expect(verdictOf(result({ entries: 0, computedHead: zeroHead, headMatches: true, signatureValid: false }), zeroHead)).toEqual({
+      tone: "failed",
+      text: "The head signature does not verify.",
+    });
+  });
 });
