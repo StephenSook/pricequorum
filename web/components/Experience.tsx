@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Ticket } from "@/components/chapters/Ticket";
 import { Preloader } from "@/components/motion/Preloader";
 import { RoughFrame } from "@/components/motion/RoughFrame";
+import { RunStage } from "@/components/RunStage";
 import { ApiError, checkHealth, createRun, type HealthCheck } from "@/lib/api/client";
 
 const PRELOAD_IMAGES = [
@@ -84,16 +85,9 @@ export function Experience() {
           onSubmit={handleSubmit}
           onExited={() => setTicketGone(true)}
         />
-      ) : (
-        <section
-          aria-live="polite"
-          className="relative z-[var(--z-content)] mx-4 max-w-xl rounded-lg bg-forest/90 px-6 py-8 text-center text-paper-light"
-        >
-          <p className="text-lg font-semibold">Run accepted by the backend.</p>
-          <p className="mt-2 text-paper-deep">Waiting for its first event.</p>
-          <p className="type-hash mt-4 break-all text-sm text-brass">{runId}</p>
-        </section>
-      )}
+      ) : runId ? (
+        <RunStage runId={runId} />
+      ) : null}
 
       {health && preloaderGone ? (
         <p
