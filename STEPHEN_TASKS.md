@@ -43,12 +43,12 @@ Deadline: **7:00 PM ET submission**, confirmation verified by 6:55 ET.
 ## Phase 3
 
 - [-] **3.13** `/verify` live: RFC 8785 + WebCrypto SHA-256 chain recompute, `@noble/ed25519` head check, local tamper test, golden vectors matching Python. Waits on a real `/api/ledger/export`
-- [ ] **3.14** Proof + `/evals` board (pass count, Wilson interval, per-outcome counts, named failure)
+- [-] **3.14** `/evals` board live (pass count, Wilson interval, per-outcome counts, named failures, per-scenario table). Waits on `/api/proof` and `/api/evals/latest`
 - [ ] **3.15** `/break` judge panel: timeout after commit, prompt injection, locked record, chain tamper, concurrent runs, drift. Each streams live chapters.
 - [ ] **3.16** Live drift strip from `/api/monitor/events`
 - [x] **3.17** `/judges` three-minute tour with deep links and curl commands, backend stops gated on a live health check
 - [ ] **3.18** Sound (stamp, paper, chain) muted by default + subtitles toggle
-- [-] **3.19** axe WCAG 2.1 AA 6/6 on production, mobile stills reviewed. Lighthouse still to run
+- [x] **3.19** axe WCAG 2.1 AA 10/10 on production, mobile stills reviewed, Lighthouse accessibility, best practices and SEO 100 (performance not measured)
 - [-] **3.20** `deployed-smoke.yml` live and green. Add `/api/health` and a real run once the backend is deployed
 
 ## Phase 4 (submission, all yours)
