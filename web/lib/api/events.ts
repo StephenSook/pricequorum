@@ -67,6 +67,7 @@ export type Readback = {
   currency: string | null;
   rawValue: string | null;
   readAt: string | null;
+  sourceId: string | null;
   fresh: boolean | null;
 };
 
@@ -365,6 +366,7 @@ export function reduceRun(view: RunView, event: Envelope): RunView {
         ...money(rec(p, "value")),
         rawValue: str(p, "raw_value"),
         readAt: str(p, "read_at"),
+        sourceId: str(p, "source_id"),
         fresh: bool(p, "fresh"),
       };
       return { ...next, readbacks: [...view.readbacks.filter((r) => readback.app === null || r.app !== readback.app), readback] };
@@ -407,8 +409,9 @@ export type Agreement = {
   allReported: boolean;
   allPriced: boolean;
   agree: boolean;
+  /** Every app's read-back is fresh and carries its read time and source id (contract ReadbackResult). */
   allFresh: boolean;
-  /** Checks that failed or reported no result. */
+  /** Checks that failed, reported no result, or lack the name or outcome the contract requires. */
   failing: Invariant[];
   invariantsOk: boolean;
   value: { minorUnits: number; currency: string } | null;
@@ -424,8 +427,10 @@ export function agreementOf(view: RunView): Agreement {
   const first = priced[0];
   const allPriced = priced.length === RECONCILED_APPS.length;
   const agree = allPriced && priced.every((r) => r.minorUnits === first.minorUnits && r.currency === first.currency);
-  const allFresh = readbacks.every((r) => r?.fresh === true);
-  const failing = view.invariants.filter((i) => i.ok !== true);
+  const allFresh = readbacks.every((r) => r?.fresh === true && r.readAt !== null && r.sourceId !== null);
+  // The contract does not yet name the required set of checks (PLAN.md open question), so every check
+  // received must be complete and passing, and at least one must exist.
+  const failing = view.invariants.filter((i) => i.ok !== true || i.name === null || i.outcome === null);
   const invariantsOk = view.invariants.length > 0 && failing.length === 0;
   return {
     readbacks,

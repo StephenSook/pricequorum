@@ -60,20 +60,30 @@ describe("isTerminalOutcome", () => {
 });
 
 describe("agreementOf", () => {
-  const readback = (seq: number, app: string, minor: number, fresh = true) =>
-    envelope(seq, "readback.result", { app, value: { minor_units: minor, currency: "usd" }, fresh });
+  // Contract-complete payloads: ReadbackResult and InvariantResult as docs/contracts/api.md defines them.
+  const readback = (seq: number, app: string, minor: number, extra: Record<string, unknown> = {}) =>
+    envelope(seq, "readback.result", { app, value: { minor_units: minor, currency: "usd" }, raw_value: String(minor / 100), fresh: true, read_at: "2026-09-13T20:00:00Z", source_id: `${app}-src`, ...extra });
+  const check = (seq: number, extra: Record<string, unknown> = {}) =>
+    envelope(seq, "invariant.result", { name: "prices_agree", ok: true, detail: "all three equal", outcome: "SUCCESS", ...extra });
+  const threeAgree = () => [readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500)];
 
-  it("proves agreement only with three fresh equal read-backs and every check passing", () => {
-    const view = apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500), envelope(4, "invariant.result", { name: "prices_agree", ok: true }));
-    expect(agreementOf(view)).toMatchObject({ proven: true, value: { minorUnits: 2500, currency: "usd" } });
+  it("proves agreement only with three complete fresh equal read-backs and every complete check passing", () => {
+    expect(agreementOf(apply(...threeAgree(), check(4)))).toMatchObject({ proven: true, value: { minorUnits: 2500, currency: "usd" } });
   });
 
-  it("does not prove agreement with a stale read, a disagreement, a missing app or a check without a result", () => {
-    const check = envelope(9, "invariant.result", { name: "prices_agree", ok: true });
-    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, false), check)).proven).toBe(false);
-    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2400), readback(3, "airtable", 2500), check)).proven).toBe(false);
-    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), check)).proven).toBe(false);
-    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500), envelope(4, "invariant.result", { name: "x" }))).proven).toBe(false);
+  it("does not prove agreement with a stale read, a disagreement, a missing app, or no checks", () => {
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { fresh: false }), check(9))).proven).toBe(false);
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2400), readback(3, "airtable", 2500), check(9))).proven).toBe(false);
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), check(9))).proven).toBe(false);
+    expect(agreementOf(apply(...threeAgree())).proven).toBe(false);
+  });
+
+  it("does not prove agreement from incomplete read-backs or checks", () => {
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { source_id: null }), check(9))).proven).toBe(false);
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { read_at: undefined }), check(9))).proven).toBe(false);
+    expect(agreementOf(apply(...threeAgree(), check(4, { ok: undefined }))).proven).toBe(false);
+    expect(agreementOf(apply(...threeAgree(), check(4, { outcome: undefined }))).proven).toBe(false);
+    expect(agreementOf(apply(...threeAgree(), check(4, { name: undefined }))).proven).toBe(false);
   });
 });
 

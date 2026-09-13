@@ -55,6 +55,7 @@ export function useRunEvents(runId: string | null): { view: RunView | null; stre
     let opened = false;
     let finished = false;
     let replayGeneration = 0;
+    let appliedGeneration = 0;
 
     const finish = (reconcile: boolean) => {
       if (cancelled) return;
@@ -91,9 +92,10 @@ export function useRunEvents(runId: string | null): { view: RunView | null; stre
       if (cancelled) return;
       const items: unknown[] = Array.isArray(body) ? body : [];
       const envelopes = items.map(envelopeFrom).filter((e): e is Envelope => e !== null && e.runId === runId);
-      // Envelopes from any replay merge by sequence number, but only the newest replay decides how
-      // many malformed entries the recorded history holds.
-      if (generation === replayGeneration) {
+      // Envelopes from any replay merge by sequence number. The malformed count comes from the newest
+      // replay that actually succeeded, so a failed newer request cannot hide an older one's warning.
+      if (generation >= appliedGeneration) {
+        appliedGeneration = generation;
         setReplayInvalid({ runId, value: Array.isArray(body) ? items.length - envelopes.length : 1 });
       }
       absorb(envelopes, true);

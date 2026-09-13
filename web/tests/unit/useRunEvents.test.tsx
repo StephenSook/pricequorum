@@ -60,6 +60,9 @@ const env = (runId: string, seq: number, type: string, payload: Record<string, u
 /** Replay responses per run, served in request order. A run with nothing queued replays an empty history. */
 let replays: Map<string, Array<() => Promise<unknown>>>;
 
+/** A replay body that makes the fake backend answer 500. */
+const REPLAY_FAILS = Symbol("replay fails");
+
 function deferred() {
   let resolve: (value: unknown) => void = () => {};
   const promise = new Promise<unknown>((r) => (resolve = r));
@@ -77,6 +80,7 @@ beforeEach(() => {
       const runId = decodeURIComponent(url.split("/api/runs/")[1].split("/")[0]);
       const next = replays.get(runId)?.shift();
       const body = next ? await next() : [];
+      if (body === REPLAY_FAILS) return { ok: false, status: 500, json: async () => ({}) };
       return { ok: true, status: 200, json: async () => body };
     }),
   );
@@ -161,6 +165,21 @@ describe("useRunEvents", () => {
     await act(async () => initial.resolve([]));
     expect(result.current.invalidMessages).toBe(1);
     expect(result.current.stream).toBe("closed");
+  });
+
+  it("keeps an older replay's malformed count when the newer replay fails", async () => {
+    const initial = deferred();
+    replays.set(RUN_A, [() => initial.promise, async () => REPLAY_FAILS]);
+    const useRunEvents = await loadHook();
+    const { result } = renderHook(() => useRunEvents(RUN_A));
+    const source = FakeEventSource.instances[0];
+
+    const outcome = env(RUN_A, 3, "run.outcome", { outcome: "SUCCESS", ...PROOF });
+    act(() => source.emit("run.outcome", outcome));
+    await waitFor(() => expect(result.current.stream).toBe("closed"));
+
+    await act(async () => initial.resolve([outcome, { not: "an envelope" }]));
+    await waitFor(() => expect(result.current.invalidMessages).toBe(1));
   });
 
   it("never lets a queued event from the previous run change the new run", async () => {
