@@ -1,0 +1,63 @@
+name: mobile
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - "web/lib/api/events.ts"
+      - "web/lib/api/proof.ts"
+      - "web/lib/api/health.ts"
+      - "web/lib/verify/chain.ts"
+      - "web/lib/verify/verdict.ts"
+      - "web/lib/format.ts"
+      - ".github/workflows/mobile.yml"
+  pull_request:
+    paths:
+      - "mobile/**"
+      - "web/lib/api/events.ts"
+      - "web/lib/api/proof.ts"
+      - "web/lib/api/health.ts"
+      - "web/lib/verify/chain.ts"
+      - "web/lib/verify/verdict.ts"
+      - "web/lib/format.ts"
+      - ".github/workflows/mobile.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # The app parses runs, proof, health and the ledger with copies of the web modules.
+      # Fails when a copy no longer matches its web source.
+      - name: Shared modules match web
+        run: node scripts/sync-shared.mjs --check
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # On-device ledger verification with WebCrypto removed, against Python golden hashes.
+      - name: Unit tests
+        run: npm test
+
+      - name: Bundle for iOS
+        run: npx expo export --platform ios --output-dir dist-ios
+
+      - name: Bundle for Android
+        run: npx expo export --platform android --output-dir dist-android

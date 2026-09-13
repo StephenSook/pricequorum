@@ -1,0 +1,56 @@
+{
+  "expo": {
+    "name": "PriceQuorum",
+    "slug": "pricequorum",
+    "owner": "stephensook",
+    "scheme": "pricequorum",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#23280b",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.stephensookra.pricequorum",
+      "appleTeamId": "Y8XVCMLQCZ",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "LSApplicationQueriesSchemes": [
+          "slack"
+        ]
+      }
+    },
+    "android": {
+      "package": "com.stephensookra.pricequorum",
+      "adaptiveIcon": {
+        "backgroundColor": "#21230c",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 220,
+          "resizeMode": "contain",
+          "backgroundColor": "#23280b"
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "38fccd66-6b43-44d7-82c1-f724a688bcf7"
+      }
+    }
+  }
+}
