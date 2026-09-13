@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
+import { DriftStrip } from "@/components/DriftStrip";
 import { HydrationMark } from "@/components/HydrationMark";
 
 // Archivo carries both roles: extended heavy display (wdth 125) and normal-width UI text.
@@ -46,6 +47,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       <body className="min-h-full flex flex-col">
         <HydrationMark />
         {children}
+        <DriftStrip />
       </body>
     </html>
   );

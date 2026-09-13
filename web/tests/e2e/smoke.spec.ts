@@ -12,6 +12,7 @@ const ROUTES: { path: string; marker: string | null; ready: (page: Page) => Loca
   { path: "/evals", marker: "evals", ready: (page) => page.getByRole("heading", { name: /the evidence/i }) },
   { path: "/judges", marker: "judges", ready: (page) => page.getByRole("heading", { name: /a three-minute tour/i }) },
   { path: "/runs/3f7c1a52-0000-4000-8000-000000000001", marker: "run", ready: (page) => page.getByRole("status").first() },
+  { path: "/break", marker: "break", ready: (page) => page.getByRole("heading", { name: /try to break it/i }) },
   // The privacy and 404 pages are server components with no route chunk, so only the root marker applies.
   { path: "/privacy", marker: null, ready: (page) => page.getByRole("heading", { name: /^privacy$/i }) },
   { path: "/this-page-does-not-exist", marker: null, ready: (page) => page.getByRole("heading", { name: /no page here/i }), status: 404 },

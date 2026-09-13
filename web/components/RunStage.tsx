@@ -8,6 +8,7 @@ import { Receipt } from "@/components/chapters/Receipt";
 import { Resolve } from "@/components/chapters/Resolve";
 import { Verify } from "@/components/chapters/Verify";
 import { useRouteReady } from "@/components/HydrationMark";
+import { useSoundCue } from "@/components/sound/useSoundCue";
 import { currentChapter } from "@/lib/api/events";
 import { prefersReducedMotion } from "@/lib/motion/prefersReducedMotion";
 import { useRunEvents, type StreamState } from "@/lib/api/useRunEvents";
@@ -50,6 +51,7 @@ export function RunStage({ runId }: { runId: string }) {
   useRouteReady("run");
   const { view, stream, invalidMessages } = useRunEvents(runId);
   const chapter = view ? currentChapter(view) : "waiting";
+  useSoundCue(view);
   const end = useRef<HTMLDivElement>(null);
 
   useEffect(() => {

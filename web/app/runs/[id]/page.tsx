@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { RoughFrame } from "@/components/motion/RoughFrame";
 import { SceneBackdrop } from "@/components/motion/SceneBackdrop";
 import { RunStage } from "@/components/RunStage";
+import { SoundControls } from "@/components/sound/SoundControls";
 
 export const metadata: Metadata = {
   title: "Run receipt | PriceQuorum",
@@ -19,7 +20,10 @@ export default async function RunPage(props: PageProps<"/runs/[id]">) {
       <SceneBackdrop dim="strong" />
       <RoughFrame />
       {RUN_ID.test(id) ? (
-        <RunStage runId={id} />
+        <>
+          <RunStage runId={id} />
+          <SoundControls />
+        </>
       ) : (
         <p
           role="alert"

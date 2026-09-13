@@ -62,6 +62,12 @@ const STOPS: Stop[] = [
     check: "proof",
   },
   {
+    title: "Try to break it",
+    what: "Start sandbox runs that inject a timeout, a prompt injection, a locked record, an edited ledger entry, two runs at once or drift, and watch each run handle it.",
+    href: "/break",
+    check: "health",
+  },
+  {
     title: "Read the source and CI",
     what: "The repository, every commit and every workflow run are public.",
     href: REPO,
