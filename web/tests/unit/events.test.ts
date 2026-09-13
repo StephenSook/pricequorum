@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { currentChapter, initialRunView, parseEnvelope, reduceRun, type Envelope } from "@/lib/api/events";
+import { currentChapter, envelopeFrom, foldEnvelopes, initialRunView, parseEnvelope, reduceRun, type Envelope } from "@/lib/api/events";
 
 const RUN = "3f7c1a52-0000-4000-8000-000000000001";
 
@@ -25,6 +25,11 @@ describe("parseEnvelope", () => {
     expect(parseEnvelope(JSON.stringify({ run_id: RUN, type: "x" }))).toBeNull();
     expect(parseEnvelope(JSON.stringify({ seq: 1, type: "x" }))).toBeNull();
     expect(parseEnvelope(JSON.stringify({ seq: 1, run_id: RUN }))).toBeNull();
+  });
+
+  it("rejects a fractional sequence number and accepts decoded objects from events.json", () => {
+    expect(envelopeFrom({ seq: 1.5, run_id: RUN, type: "run.created" })).toBeNull();
+    expect(envelopeFrom({ seq: 2, run_id: RUN, type: "run.created" })).toMatchObject({ seq: 2, payload: {} });
   });
 });
 
@@ -53,16 +58,65 @@ describe("reduceRun", () => {
     expect(step.recovery).toEqual({ foundLanded: true, externalObjectId: "price_new" });
     expect(step.state).toBe("completed");
     expect(step.entryHash).toBe("bb");
+    expect(view.unplaced).toEqual([]);
     expect(currentChapter(view)).toBe("migrate");
   });
 
-  it("keeps money as integer minor units and never invents a missing amount", () => {
+  it("keeps a ledger event that names no known step visible instead of dropping it", () => {
     const view = apply(
-      envelope(1, "readback.result", { app: "notion", value: { minor_units: 2500, currency: "usd" }, raw_value: "24.999999999999996" }),
+      envelope(1, "ledger.completed", { ledger_id: 99, entry_hash: "bb" }),
+      envelope(2, "adapter.fault", { call_site: "stripe.price.create", kind: "timeout" }),
+    );
+    expect(view.ledger).toHaveLength(0);
+    expect(view.unplaced).toEqual([
+      { seq: 1, type: "ledger.completed" },
+      { seq: 2, type: "adapter.fault" },
+    ]);
+  });
+
+  it("keeps money as integer minor units, never invents a missing amount, and records freshness", () => {
+    const view = apply(
+      envelope(1, "readback.result", { app: "notion", value: { minor_units: 2500, currency: "usd" }, raw_value: "24.999999999999996", fresh: true }),
       envelope(2, "readback.result", { app: "airtable", value: null, raw_value: null }),
     );
-    expect(view.readbacks.find((r) => r.app === "notion")).toMatchObject({ minorUnits: 2500, currency: "usd", rawValue: "24.999999999999996" });
-    expect(view.readbacks.find((r) => r.app === "airtable")).toMatchObject({ minorUnits: null, currency: null });
+    expect(view.readbacks.find((r) => r.app === "notion")).toMatchObject({ minorUnits: 2500, currency: "usd", rawValue: "24.999999999999996", fresh: true });
+    expect(view.readbacks.find((r) => r.app === "airtable")).toMatchObject({ minorUnits: null, currency: null, fresh: null });
+  });
+
+  it("reads an amount that is not whole minor units with a currency code as missing", () => {
+    const view = apply(
+      envelope(1, "readback.result", { app: "stripe", value: { minor_units: 24.5, currency: "usd" }, fresh: true }),
+      envelope(2, "readback.result", { app: "notion", value: { minor_units: 2450, currency: "US dollars" }, fresh: true }),
+    );
+    expect(view.readbacks.map((r) => [r.minorUnits, r.currency])).toEqual([
+      [null, null],
+      [null, null],
+    ]);
+  });
+
+  it("does not let an unnamed invariant replace another result", () => {
+    const view = apply(
+      envelope(1, "invariant.result", { ok: false, detail: "first" }),
+      envelope(2, "invariant.result", { ok: true, detail: "second" }),
+      envelope(3, "invariant.result", { name: "prices_agree", ok: false }),
+      envelope(4, "invariant.result", { name: "prices_agree", ok: true }),
+    );
+    expect(view.invariants.map((i) => [i.name, i.ok])).toEqual([
+      [null, false],
+      [null, true],
+      ["prices_agree", true],
+    ]);
+  });
+
+  it("records subscriber migrations and the renewal invoice", () => {
+    const view = apply(
+      envelope(1, "subscription.migrated", { subscription_id: "sub_1", from_price: "price_old", to_price: "price_new", proration_behavior: "none" }),
+      envelope(2, "subscription.migrated", { subscription_id: "sub_1", from_price: "price_old", to_price: "price_new", proration_behavior: "none" }),
+      envelope(3, "renewal.invoice", { invoice_id: "in_1", amount: { minor_units: 2500, currency: "usd" }, test_clock_id: "clock_1" }),
+    );
+    expect(view.subscriptions).toEqual([{ subscriptionId: "sub_1", fromPrice: "price_old", toPrice: "price_new", prorationBehavior: "none" }]);
+    expect(view.renewalInvoice).toEqual({ invoiceId: "in_1", minorUnits: 2500, currency: "usd", testClockId: "clock_1" });
+    expect(currentChapter(view)).toBe("migrate");
   });
 
   it("records unknown event types instead of dropping them", () => {
@@ -86,5 +140,20 @@ describe("reduceRun", () => {
     expect(currentChapter(view)).toBe("approve");
     view = reduceRun(view, envelope(3, "approval.decided", { decision: "APPROVED", approver_display: "Stephen" }));
     expect(view.approval).toMatchObject({ phase: "decided", decision: "APPROVED", summary: "Pro 20 to 25", mode: "slack" });
+  });
+});
+
+describe("foldEnvelopes", () => {
+  it("builds the same view whatever order the replay and the stream deliver, counting a repeat once", () => {
+    const events = [
+      envelope(1, "ledger.pending", { ledger_id: 7, step_no: 1, app: "stripe" }),
+      envelope(2, "ledger.completed", { ledger_id: 7, entry_hash: "bb" }),
+      envelope(3, "run.outcome", { outcome: "SUCCESS" }),
+    ];
+    const inOrder = foldEnvelopes(RUN, events);
+    const interleaved = foldEnvelopes(RUN, [events[2], events[1], events[1], events[0], { ...events[0], runId: "other" }]);
+    expect(interleaved).toEqual(inOrder);
+    expect(interleaved.ledger[0].state).toBe("completed");
+    expect(interleaved.unplaced).toEqual([]);
   });
 });

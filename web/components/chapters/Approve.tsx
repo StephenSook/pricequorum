@@ -72,7 +72,7 @@ export function Approve({ view }: { view: RunView }) {
             <span
               className={`type-kicker inline-block rotate-[-4deg] rounded border-[3px] px-3 py-1 text-base ${DECISION_STYLE[decision ?? "PENDING"] ?? DECISION_STYLE.PENDING}`}
             >
-              {decision ? decision.toLowerCase() : "waiting"}
+              {decision ? decision.toLowerCase() : approval.phase === "decided" ? "not reported" : "waiting"}
             </span>
             {pending && remaining ? <span className="text-ink-soft">expires in {remaining}</span> : null}
             {approval.approverDisplay ? <span className="text-ink-soft">by {approval.approverDisplay}</span> : null}

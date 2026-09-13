@@ -3,8 +3,13 @@
  * view the chapters render.
  *
  * Every field is read defensively from the envelope the backend actually sent. Nothing is
- * synthesised: a missing field stays null, and an event type this client does not know is
- * recorded in `unrecognized` so it shows up during integration instead of vanishing.
+ * synthesised: a missing field stays null. An event type this client does not know is
+ * recorded in `unrecognized`, and a ledger event that names no known step is recorded in
+ * `unplaced`, so both show up during integration instead of vanishing.
+ *
+ * The live stream only delivers the named types in KNOWN_EVENT_TYPES (an EventSource cannot
+ * listen for every name), so `useRunEvents` also loads `events.json`, which carries every
+ * type, when a run page opens and again when the run ends.
  * When `shared/openapi.json` lands, payload readers narrow to the generated types.
  */
 
@@ -62,9 +67,26 @@ export type Readback = {
   currency: string | null;
   rawValue: string | null;
   readAt: string | null;
+  fresh: boolean | null;
 };
 
 export type Invariant = { name: string | null; ok: boolean | null; detail: string | null; outcome: Outcome | null };
+
+export type SubscriptionMove = {
+  subscriptionId: string | null;
+  fromPrice: string | null;
+  toPrice: string | null;
+  prorationBehavior: string | null;
+};
+
+export type RenewalInvoice = {
+  invoiceId: string | null;
+  minorUnits: number | null;
+  currency: string | null;
+  testClockId: string | null;
+};
+
+type SeenEvent = { seq: number; type: string };
 
 export type RunView = {
   runId: string;
@@ -93,6 +115,8 @@ export type RunView = {
     decidedAt: string | null;
   } | null;
   ledger: LedgerStep[];
+  subscriptions: SubscriptionMove[];
+  renewalInvoice: RenewalInvoice | null;
   readbacks: Readback[];
   invariants: Invariant[];
   outcome: {
@@ -102,7 +126,10 @@ export type RunView = {
     signature: string | null;
     publicKey: string | null;
   } | null;
-  unrecognized: { seq: number; type: string }[];
+  /** Event types this client does not know. */
+  unrecognized: SeenEvent[];
+  /** Ledger events that name no ledger step this page has seen. */
+  unplaced: SeenEvent[];
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -117,6 +144,29 @@ const rec = (o: Record<string, unknown>, k: string): Record<string, unknown> => 
 const outcomeOf = (value: string | null): Outcome | null =>
   value !== null && (OUTCOMES as readonly string[]).includes(value) ? (value as Outcome) : null;
 
+/**
+ * Contract money: whole minor units and a lowercase ISO 4217 code. Anything else reads as
+ * missing, so a fractional or unlabelled amount can never count towards agreement.
+ */
+function money(o: Record<string, unknown>): { minorUnits: number | null; currency: string | null } {
+  const minor = o.minor_units;
+  const currency = o.currency;
+  if (typeof minor === "number" && Number.isSafeInteger(minor) && typeof currency === "string" && /^[a-z]{3}$/.test(currency)) {
+    return { minorUnits: minor, currency };
+  }
+  return { minorUnits: null, currency: null };
+}
+
+/** Validates one decoded envelope object (from the stream or from `events.json`). Returns null when invalid. */
+export function envelopeFrom(data: unknown): Envelope | null {
+  if (!isRecord(data)) return null;
+  const seq = num(data, "seq");
+  const runId = str(data, "run_id");
+  const type = str(data, "type");
+  if (seq === null || !Number.isInteger(seq) || runId === null || type === null) return null;
+  return { seq, runId, type, at: str(data, "at") ?? "", payload: rec(data, "payload") };
+}
+
 /** Parses one SSE `data:` payload. Returns null when the message is not a valid envelope. */
 export function parseEnvelope(raw: string): Envelope | null {
   let data: unknown;
@@ -125,12 +175,7 @@ export function parseEnvelope(raw: string): Envelope | null {
   } catch {
     return null;
   }
-  if (!isRecord(data)) return null;
-  const seq = num(data, "seq");
-  const runId = str(data, "run_id");
-  const type = str(data, "type");
-  if (seq === null || runId === null || type === null) return null;
-  return { seq, runId, type, at: str(data, "at") ?? "", payload: rec(data, "payload") };
+  return envelopeFrom(data);
 }
 
 export function initialRunView(runId: string): RunView {
@@ -144,15 +189,23 @@ export function initialRunView(runId: string): RunView {
     policy: null,
     approval: null,
     ledger: [],
+    subscriptions: [],
+    renewalInvoice: null,
     readbacks: [],
     invariants: [],
     outcome: null,
     unrecognized: [],
+    unplaced: [],
   };
 }
 
-function updateStep(ledger: LedgerStep[], ledgerId: number, patch: (step: LedgerStep) => LedgerStep): LedgerStep[] {
-  return ledger.map((step) => (step.ledgerId === ledgerId ? patch(step) : step));
+/** Applies a patch to the ledger step the event names, or records the event as unplaced. */
+function placeOnStep(view: RunView, next: RunView, event: Envelope, patch: (step: LedgerStep) => LedgerStep): RunView {
+  const ledgerId = num(event.payload, "ledger_id");
+  if (ledgerId === null || !view.ledger.some((step) => step.ledgerId === ledgerId)) {
+    return { ...next, unplaced: [...view.unplaced, { seq: event.seq, type: event.type }] };
+  }
+  return { ...next, ledger: view.ledger.map((step) => (step.ledgerId === ledgerId ? patch(step) : step)) };
 }
 
 /** Applies one envelope. Replayed envelopes (seq already seen) are ignored, so reconnects are safe. */
@@ -166,18 +219,11 @@ export function reduceRun(view: RunView, event: Envelope): RunView {
       return { ...next, requestText: str(p, "request_text") };
     case "run.status":
       return { ...next, status: str(p, "status") };
-    case "intent.parsed": {
-      const amount = rec(p, "new_amount");
+    case "intent.parsed":
       return {
         ...next,
-        intent: {
-          planHint: str(p, "plan_hint"),
-          minorUnits: num(amount, "minor_units"),
-          currency: str(amount, "currency"),
-          interval: str(p, "interval"),
-        },
+        intent: { planHint: str(p, "plan_hint"), ...money(rec(p, "new_amount")), interval: str(p, "interval") },
       };
-    }
     case "resolve.completed":
       return {
         ...next,
@@ -226,7 +272,7 @@ export function reduceRun(view: RunView, event: Envelope): RunView {
       };
     case "ledger.pending": {
       const ledgerId = num(p, "ledger_id");
-      if (ledgerId === null) return { ...next, unrecognized: [...view.unrecognized, { seq: event.seq, type: event.type }] };
+      if (ledgerId === null) return { ...next, unplaced: [...view.unplaced, { seq: event.seq, type: event.type }] };
       const step: LedgerStep = {
         ledgerId,
         stepNo: num(p, "step_no"),
@@ -243,61 +289,59 @@ export function reduceRun(view: RunView, event: Envelope): RunView {
       };
       return { ...next, ledger: [...view.ledger.filter((s) => s.ledgerId !== ledgerId), step] };
     }
-    case "adapter.fault": {
-      const ledgerId = num(p, "ledger_id");
-      if (ledgerId === null) return next;
+    case "adapter.fault":
+      return placeOnStep(view, next, event, (s) => ({
+        ...s,
+        fault: { callSite: str(p, "call_site"), kind: str(p, "kind"), injected: bool(p, "injected") },
+      }));
+    case "readback.recovery":
+      return placeOnStep(view, next, event, (s) => ({
+        ...s,
+        recovery: { foundLanded: bool(p, "found_landed"), externalObjectId: str(p, "external_object_id") },
+      }));
+    case "ledger.completed":
+      return placeOnStep(view, next, event, (s) => ({
+        ...s,
+        state: "completed",
+        externalObjectId: str(p, "external_object_id"),
+        prevHash: str(p, "prev_hash"),
+        entryHash: str(p, "entry_hash"),
+      }));
+    case "subscription.migrated": {
+      const move: SubscriptionMove = {
+        subscriptionId: str(p, "subscription_id"),
+        fromPrice: str(p, "from_price"),
+        toPrice: str(p, "to_price"),
+        prorationBehavior: str(p, "proration_behavior"),
+      };
       return {
         ...next,
-        ledger: updateStep(view.ledger, ledgerId, (s) => ({
-          ...s,
-          fault: { callSite: str(p, "call_site"), kind: str(p, "kind"), injected: bool(p, "injected") },
-        })),
+        subscriptions: [...view.subscriptions.filter((s) => move.subscriptionId === null || s.subscriptionId !== move.subscriptionId), move],
       };
     }
-    case "readback.recovery": {
-      const ledgerId = num(p, "ledger_id");
-      if (ledgerId === null) return next;
+    case "renewal.invoice":
       return {
         ...next,
-        ledger: updateStep(view.ledger, ledgerId, (s) => ({
-          ...s,
-          recovery: { foundLanded: bool(p, "found_landed"), externalObjectId: str(p, "external_object_id") },
-        })),
+        renewalInvoice: { invoiceId: str(p, "invoice_id"), ...money(rec(p, "amount")), testClockId: str(p, "test_clock_id") },
       };
-    }
-    case "ledger.completed": {
-      const ledgerId = num(p, "ledger_id");
-      if (ledgerId === null) return next;
-      return {
-        ...next,
-        ledger: updateStep(view.ledger, ledgerId, (s) => ({
-          ...s,
-          state: "completed",
-          externalObjectId: str(p, "external_object_id"),
-          prevHash: str(p, "prev_hash"),
-          entryHash: str(p, "entry_hash"),
-        })),
-      };
-    }
     case "readback.result": {
-      const value = rec(p, "value");
       const readback: Readback = {
         app: str(p, "app"),
-        minorUnits: num(value, "minor_units"),
-        currency: str(value, "currency"),
+        ...money(rec(p, "value")),
         rawValue: str(p, "raw_value"),
         readAt: str(p, "read_at"),
+        fresh: bool(p, "fresh"),
       };
-      return { ...next, readbacks: [...view.readbacks.filter((r) => r.app !== readback.app), readback] };
+      return { ...next, readbacks: [...view.readbacks.filter((r) => readback.app === null || r.app !== readback.app), readback] };
     }
-    case "invariant.result":
+    case "invariant.result": {
+      const invariant: Invariant = { name: str(p, "name"), ok: bool(p, "ok"), detail: str(p, "detail"), outcome: outcomeOf(str(p, "outcome")) };
+      // An unnamed check never replaces another result, so a later pass cannot hide an earlier failure.
       return {
         ...next,
-        invariants: [
-          ...view.invariants.filter((i) => i.name !== str(p, "name")),
-          { name: str(p, "name"), ok: bool(p, "ok"), detail: str(p, "detail"), outcome: outcomeOf(str(p, "outcome")) },
-        ],
+        invariants: [...view.invariants.filter((i) => invariant.name === null || i.name !== invariant.name), invariant],
       };
+    }
     case "run.outcome":
       return {
         ...next,
@@ -309,19 +353,27 @@ export function reduceRun(view: RunView, event: Envelope): RunView {
           publicKey: str(p, "public_key"),
         },
       };
-    case "subscription.migrated":
-    case "renewal.invoice":
-      return next;
     default:
       return { ...next, unrecognized: [...view.unrecognized, { seq: event.seq, type: event.type }] };
   }
+}
+
+/**
+ * Builds the view from every envelope held for a run, in sequence order, whatever order they
+ * arrived in (replay and live stream can interleave). A repeated sequence number counts once.
+ */
+export function foldEnvelopes(runId: string, envelopes: Iterable<Envelope>): RunView {
+  return [...envelopes]
+    .filter((e) => e.runId === runId)
+    .sort((a, b) => a.seq - b.seq)
+    .reduce(reduceRun, initialRunView(runId));
 }
 
 /** The chapter the UI should show, derived only from what the backend has reported so far. */
 export function currentChapter(view: RunView): ChapterId {
   if (view.outcome) return "receipt";
   if (view.readbacks.length > 0 || view.invariants.length > 0) return "verify";
-  if (view.ledger.length > 0) return "migrate";
+  if (view.ledger.length > 0 || view.subscriptions.length > 0 || view.renewalInvoice) return "migrate";
   if (view.approval || view.policy) return "approve";
   if (view.resolution || view.intent) return "resolve";
   return "waiting";

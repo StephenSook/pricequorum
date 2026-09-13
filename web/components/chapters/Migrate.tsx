@@ -1,6 +1,7 @@
 import { ChapterFrame } from "@/components/chapters/ChapterFrame";
 import { CopyHash } from "@/components/ui/CopyHash";
 import type { LedgerStep, RunView } from "@/lib/api/events";
+import { formatMinor } from "@/lib/format";
 
 const FAULT_TEXT: Record<string, string> = {
   timeout: "The call timed out after the request was sent",
@@ -32,13 +33,19 @@ function StepRow({ step }: { step: LedgerStep }) {
         <div role="status" className="mt-3 rounded-md bg-outcome-refused/10 px-3 py-2 text-sm sm:ml-[3.25rem]">
           <p className="font-semibold text-outcome-refused">
             {step.fault.kind ? (FAULT_TEXT[step.fault.kind] ?? step.fault.kind) : "Fault reported"}
-            {step.fault.injected ? " (injected on purpose for this run)" : ""}
+            {step.fault.injected === true
+              ? " (injected on purpose for this run)"
+              : step.fault.injected === null
+                ? " (the backend did not say whether this fault was injected)"
+                : ""}
           </p>
           {step.recovery ? (
             <p className="mt-1">
-              {step.recovery.foundLanded
+              {step.recovery.foundLanded === true
                 ? "Read the app back: the write had landed, so it was not sent again."
-                : "Read the app back: the write had not landed, so it was retried with the same key."}
+                : step.recovery.foundLanded === false
+                  ? "Read the app back: the write had not landed, so it was retried with the same key."
+                  : "Read the app back, but the backend did not report whether the write had landed."}
             </p>
           ) : (
             <p className="mt-1 text-ink-soft">Reading the app back to learn whether the write landed.</p>
@@ -52,6 +59,39 @@ function StepRow({ step }: { step: LedgerStep }) {
         </div>
       ) : null}
     </li>
+  );
+}
+
+function ExistingSubscribers({ view }: { view: RunView }) {
+  const invoice = view.renewalInvoice;
+  if (view.subscriptions.length === 0 && !invoice) return null;
+  return (
+    <div className="mt-4 rounded-md border border-ink/15 bg-paper-light/70 px-4 py-3 text-sm">
+      <p className="font-semibold">Existing subscribers</p>
+      {view.subscriptions.length > 0 ? (
+        <ul className="mt-2 space-y-1">
+          {view.subscriptions.map((move, index) => (
+            <li key={move.subscriptionId ?? index} className="flex flex-wrap gap-x-2">
+              <span className="type-hash">{move.subscriptionId ?? "subscription id not reported"}</span>
+              <span className="text-ink-soft">moved from</span>
+              <span className="type-hash">{move.fromPrice ?? "price not reported"}</span>
+              <span className="text-ink-soft">to</span>
+              <span className="type-hash">{move.toPrice ?? "price not reported"}</span>
+              {move.prorationBehavior ? <span className="text-ink-soft">proration: {move.prorationBehavior}</span> : null}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {invoice ? (
+        <p className="mt-2">
+          Renewal invoice <span className="type-hash">{invoice.invoiceId ?? "id not reported"}</span>
+          {invoice.minorUnits !== null && invoice.currency
+            ? ` billed ${formatMinor(invoice.minorUnits, invoice.currency)}`
+            : ", amount not reported"}
+          {invoice.testClockId ? " on a Stripe test clock" : ""}.
+        </p>
+      ) : null}
+    </div>
   );
 }
 
@@ -75,11 +115,14 @@ export function Migrate({ view }: { view: RunView }) {
         </div>
       }
     >
-      <ol className="rounded-md border border-olive/25 bg-[repeating-linear-gradient(transparent_0_calc(3rem-1px),rgb(70_80_22/0.08)_calc(3rem-1px)_3rem)] bg-paper-light/70 px-4">
-        {steps.map((step) => (
-          <StepRow key={step.ledgerId} step={step} />
-        ))}
-      </ol>
+      {steps.length > 0 ? (
+        <ol className="rounded-md border border-olive/25 bg-[repeating-linear-gradient(transparent_0_calc(3rem-1px),rgb(70_80_22/0.08)_calc(3rem-1px)_3rem)] bg-paper-light/70 px-4">
+          {steps.map((step) => (
+            <StepRow key={step.ledgerId} step={step} />
+          ))}
+        </ol>
+      ) : null}
+      <ExistingSubscribers view={view} />
     </ChapterFrame>
   );
 }
