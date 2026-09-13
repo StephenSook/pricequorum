@@ -106,7 +106,13 @@ export function JudgeTour() {
               ? "Checking whether the backend is reachable."
               : "The backend is not reachable yet, so these commands will work once it is deployed."}
         </p>
-        <pre className="type-hash mt-3 overflow-x-auto rounded-md bg-forest px-4 py-3 text-sm text-paper-light">
+        {/* Scrolls sideways on narrow screens, so it must be reachable and named for keyboard users. */}
+        <pre
+          tabIndex={0}
+          role="region"
+          aria-label="Terminal commands"
+          className="type-hash mt-3 overflow-x-auto rounded-md bg-forest px-4 py-3 text-sm text-paper-light"
+        >
           {COMMANDS.map((path) => `curl -s ${API_BASE || "<backend-url>"}${path}`).join("\n")}
         </pre>
       </section>
