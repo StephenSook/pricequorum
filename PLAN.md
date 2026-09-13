@@ -1,11 +1,11 @@
 # PRICEQUORUM: Plan & Coordination
 
-> Living status doc for Stephen + Tylin. Updated on every task change and pushed to `main`.
+> Living status doc for Stephen + Tylin + Khadim. Updated on every task change and pushed to `main`.
 > Single source of truth for who is working on what.
 > **Atomic commits. Never bundle a status change with code.**
 
 **Project:** An agent that changes a SaaS plan's price once, correctly, across Stripe, Notion and Airtable, gated by a Slack approval, proven by reading every system back, recorded in a hash-chained signed ledger.
-**Team:** Stephen (full frontend, submission, demo video, brief, README) · Tylin (full backend)
+**Team:** Stephen (full frontend, submission, demo video, brief, README) · Tylin (backend core loop) · Khadim (evaluation suite and integrations)
 **Hackathon:** Multi-App AI Agent Hackathon (Lemma x Comma Capital), Sunday September 13, 2026
 **Deadline:** **4:00 PM PT / 7:00 PM ET submission.** Judging 4:00 to 4:40 PT. Keep every host up and warm until 5:00 PM PT.
 **Repo:** https://github.com/StephenSook/pricequorum (public, built in the open during the event)
@@ -19,7 +19,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 
 ---
 
-## Judged criteria and the surface that answers each
+## Rubric coverage: the surface that answers each criterion
 
 **Organizers at the opening (12:00 ET) put heavy emphasis on technical execution.** Treat the precision gates below as merge blockers, not goals.
 
@@ -95,22 +95,24 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 
 **CHECKPOINT 3:45 PM ET: one real request goes Slack approve, three writes, three read-backs, SUCCESS, rendered in the deployed UI. If not green, both lanes swarm the break before anything in Phase 3.**
 
-### Phase 3: Reliability depth + judge-facing wow (until 5:45 PM ET)
+### Phase 3: Reliability depth + public demo surfaces (until 5:45 PM ET)
 
 | # | Component | File(s) | Owner | Status | Deps | Notes |
 |---|---|---|---|---|---|---|
-| 3.1 | Eval harness + all 20 scenarios from spec section 14, Wilson CI, runs per scenario, named failures, results in DB, `--ci` mode | `backend/evals/` | Tylin | ⬜ | 2.10 | |
+| 3.1a | Twenty scenario files (seed, request, faults, expected outcome and end state) | `backend/evals/scenarios/` | Khadim | ⬜ | 1.3 | Can start before the loop exists |
+| 2.5b | Hand-labeled resolver set, 20 to 40 rows | `backend/evals/labeled_plans.csv` | Khadim | ⬜ | n/a | → Tylin for 2.5 |
+| 3.1 | Eval harness + all 20 scenarios from spec section 14, Wilson CI, runs per scenario, named failures, results in DB, `--ci` mode | `backend/evals/` | Khadim | ⬜ | 2.10 3.1a | |
 | 3.2 | Concurrency: `pg_try_advisory_xact_lock` + partial unique index | `backend/ledger/` | Tylin | ⬜ | 2.10 | |
 | 3.3 | Ed25519 signed head (PyNaCl) + `/api/public-key` | `backend/ledger/signing.py` | Tylin | ⬜ | 1.5 | |
 | 3.4 | `/api/ledger/export` + `/api/ledger/verify` | `backend/api/` | Tylin | ⬜ | 3.3 | Chain rule is contract |
-| 3.5 | `/api/proof` recomputed from DB | `backend/api/routes_proof.py` | Tylin | ⬜ | 3.1 | |
-| 3.6 | Drift monitor + heal (derived surfaces only) + monitor SSE | `backend/monitor/drift.py` | Tylin | ⬜ | 2.9 | |
-| 3.7 | Judge sandbox: rate limited, isolated judge plan, reset job, chain tamper on a sandbox copy | `backend/api/routes_sandbox.py` | Tylin | ⬜ | 2.10 3.4 | |
+| 3.5 | `/api/proof` recomputed from DB | `backend/api/routes_proof.py` | Khadim | ⬜ | 3.1 | |
+| 3.6 | Drift monitor + heal (derived surfaces only) + monitor SSE | `backend/monitor/drift.py` | Khadim | ⬜ | 2.9 | |
+| 3.7 | Judge sandbox: rate limited, isolated judge plan, reset job, chain tamper on a sandbox copy | `backend/api/routes_sandbox.py` | Khadim | ⬜ | 2.10 3.4 | |
 | 3.8 | Crash recovery: restart resumes pending rows by reading back | `backend/ledger/store.py` | Tylin | ⬜ | 2.10 | |
 | 3.9 | Test clock renewal path (max 3 subs per clock, `proration_behavior=none`) | `backend/adapters/stripe_adapter.py` | Tylin | ⬜ | 2.1 | |
-| 3.10 | HTTP MCP server + printed curl | `backend/mcp/server.py` | Tylin | ⬜ | 2.10 | |
-| 3.11 | Arga twins spike, 30 minute cap, keep only if it writes | `backend/evals/` | Tylin | ⬜ | 3.1 | |
-| 3.12 | Mutation-test the eval gates both directions | `backend/evals/` | Tylin | ⬜ | 3.1 | |
+| 3.10 | HTTP MCP server + printed curl | `backend/mcp/server.py` | Khadim | ⬜ | 2.10 | |
+| 3.11 | Arga twins spike, 30 minute cap, keep only if it writes | `backend/evals/` | Khadim | ⬜ | 3.1 | |
+| 3.12 | Mutation-test the eval gates both directions | `backend/evals/` | Khadim | ⬜ | 3.1 | |
 | 3.13 | `/verify`: browser recomputes JCS + SHA-256 chain, verifies Ed25519 signature, tamper toggle | `web/app/verify/` `web/lib/verify/` | Stephen | ⬜ | 3.4 | |
 | 3.14 | Proof + `/evals` board | `web/app/evals/` | Stephen | ⬜ | 3.5 | |
 | 3.15 | `/break` judge panel streaming chapters live | `web/app/break/` | Stephen | ⬜ | 3.7 | |
@@ -146,7 +148,9 @@ Freeze policy from 5:45 ET: only claim corrections, guard additions, tests and d
 
 Nothing in these lists overlaps. If you need a change in the other lane, write it under Open Questions and ping. Do not edit.
 
-**Tylin:** `backend/**` · `shared/openapi.json` · `.github/workflows/backend.yml` · `Makefile` · `docker-compose.yml` · `TYLIN_TASKS.md`
+**Tylin:** `backend/**` except Khadim's paths below · `shared/openapi.json` · `.github/workflows/backend.yml` · `Makefile` · `docker-compose.yml` · `TYLIN_TASKS.md`
+
+**Khadim:** `backend/evals/**` · `backend/monitor/**` · `backend/mcp/**` · `backend/api/routes_sandbox.py` · `backend/api/routes_proof.py` · `backend/tests/evals/**` · `KHADIM_TASKS.md`
 
 **Stephen:** `web/**` · `docs/**` except `docs/contracts/api.md` · `README.md` · `.github/workflows/web.yml` · `.github/workflows/deployed-smoke.yml` · `STEPHEN_TASKS.md` · `.gitignore` · `.env.example`
 
@@ -165,20 +169,21 @@ Full definitions: [docs/contracts/api.md](docs/contracts/api.md). Generated sour
 | `RunSummary` | Tylin | Stephen | `GET /api/runs/{id}` |
 | SSE `Envelope` + event types | Tylin | Stephen | `{ seq, run_id, type, at, payload }`, `Last-Event-ID` replay |
 | Ledger chain rule | Tylin | Stephen (`/verify`) | `sha256(prev_hash_bytes \|\| RFC8785(payload))`, genesis 32 zero bytes, Ed25519 over head bytes |
-| `Proof` | Tylin | Stephen | `GET /api/proof`, recomputed per request |
-| Sandbox scenarios | Tylin | Stephen (`/break`) | `POST /api/sandbox/runs` enum |
+| `Proof` | Khadim | Stephen | `GET /api/proof`, recomputed per request |
+| Sandbox scenarios | Khadim | Stephen (`/break`) | `POST /api/sandbox/runs` enum |
+| Eval scenario file format | Khadim | Tylin (harness hooks) | One file per scenario: seed, request, faults, expected outcome, expected end state in minor units |
 
 ---
 
 ## Decisions (locked)
 
-- **D1** Full 20-scenario spec plus judge-facing wow layers. Dependency order guarantees a complete loop first.
+- **D1** Full 20-scenario spec plus public demo surfaces (break-it panel, browser verification, drift detector, MCP). Dependency order guarantees a complete loop first.
 - **D2** Web: Next.js 16 App Router, Tailwind 4, shadcn for console parts, GSAP for motion, Lottie for loaders, one light WebGL paper shader.
 - **D3** Experience is "live run as chapters". Every animation beat fires on a real SSE event, never on a timer.
 - **D4** Theme "ledger paper": paper, ink green, olive, bordeaux, marbled endpapers, rubber-stamp outcomes. Outcome colors stay semantic.
 - **D5** Seam: FastAPI + SSE; Pydantic produces `shared/openapi.json`; web types are generated from it and CI fails on drift.
 - **D6** Hosting: web on Vercel (`pricequorum-web`), backend on a long-running host, Postgres on Supabase.
-- **D7** Backend accounts created and held by Tylin; Vercel and design assets by Stephen.
+- **D7** Backend accounts created and held by Tylin (shared with Khadim privately, never in git); Vercel and design assets by Stephen.
 - **D8** Git: commit straight to `main` after `git pull --rebase`, one logical change per commit, push immediately. Contract changes go through a PR.
 - **D9** Stripe test mode only. A live key is refused at startup. Test mode is Stripe's real API without money moving, not mock data.
 - **D10** Repo is public from 13:05 ET. Team strategy notes live outside this repo. Every push is public the moment it lands, so secrets hygiene applies to every commit, not just the last one.
