@@ -60,7 +60,7 @@ Deadline: **7:00 PM ET submission**, confirmation verified by 6:55 ET.
 - [ ] **4.5** Stills of every judge screen from the deployed origin
 - [ ] **4.6** Video: 2:00, real captures, captions, loudness -14 to -16 LUFS, frames checked at every beat
 - [ ] **4.7** Sweeps: em-dash, AI tone, claims vs code, env vars vs code
-- [ ] **4.8** Strip `docs/STRATEGY.md` from history, gitleaks full history, flip public
+- [ ] **4.8** Full-history gitleaks scan on the final SHA (repo already public)
 - [ ] **4.11** Submit, reload the confirmation
 
 ## Contracts you consume

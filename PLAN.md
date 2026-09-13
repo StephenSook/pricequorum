@@ -8,7 +8,7 @@
 **Team:** Stephen (full frontend, submission, demo video, brief, README) · Tylin (full backend)
 **Hackathon:** Multi-App AI Agent Hackathon (Lemma x Comma Capital), Sunday September 13, 2026
 **Deadline:** **4:00 PM PT / 7:00 PM ET submission.** Judging 4:00 to 4:40 PT. Keep every host up and warm until 5:00 PM PT.
-**Repo:** https://github.com/StephenSook/pricequorum (private until submission, then public)
+**Repo:** https://github.com/StephenSook/pricequorum (public, built in the open during the event)
 **Spec:** `PriceQuorum_Master_Spec` (shared PDF). API contract: [docs/contracts/api.md](docs/contracts/api.md).
 
 Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️ cut
@@ -135,7 +135,7 @@ Freeze policy from 5:45 ET: only claim corrections, guard additions, tests and d
 | 4.5 | Stills of every judge screen from the deployed origin, desktop + 390 px | local | Stephen | ⬜ | 3.19 | |
 | 4.6 | Record and edit the 2:00 video; verify frames, duration, loudness | local | Stephen | ⬜ | 4.2 | |
 | 4.7 | Sweeps: em-dash, AI tone, claims vs code, env vars vs code | repo | Stephen | ⬜ | 4.4 | |
-| 4.8 | Remove `docs/STRATEGY.md` from tree and history, gitleaks full history, flip public | repo | Stephen | ⬜ | 4.7 | |
+| 4.8 | Full-history gitleaks scan on the final SHA (repo is already public) | repo | Stephen | ⬜ | 4.7 | |
 | 4.9 | Clean-clone quickstart repro on a fresh directory | n/a | Tylin | ⬜ | 4.4 | |
 | 4.10 | Warm DB + backend, confirm Slack socket connected, keep hosts up through judging | hosts | Tylin | ⬜ | 2.11 | |
 | 4.11 | Submit, then verify the confirmation by reload | form | Stephen | ⬜ | 4.6 4.8 | By 6:50 ET |
@@ -181,7 +181,7 @@ Full definitions: [docs/contracts/api.md](docs/contracts/api.md). Generated sour
 - **D7** Backend accounts created and held by Tylin; Vercel and design assets by Stephen.
 - **D8** Git: commit straight to `main` after `git pull --rebase`, one logical change per commit, push immediately. Contract changes go through a PR.
 - **D9** Stripe test mode only. A live key is refused at startup. Test mode is Stripe's real API without money moving, not mock data.
-- **D10** Repo private until submission. Before the flip: strip `docs/STRATEGY.md` from history, full-history gitleaks.
+- **D10** Repo is public from 13:05 ET. Team strategy notes live outside this repo. Every push is public the moment it lands, so secrets hygiene applies to every commit, not just the last one.
 
 ## Open Questions
 
