@@ -1,26 +1,148 @@
 @import "tailwindcss";
 
+/*
+  PriceQuorum design tokens: "ledger paper".
+  Base palette follows the reference site's olive / beige / dark green / bordeaux family.
+  Outcome colors are semantic only and never used as decoration.
+*/
+@theme {
+  --color-paper: #efe6d2;
+  --color-paper-deep: #d9cdad;
+  --color-paper-light: #f6f0e1;
+  --color-ink: #1e2a1a;
+  --color-ink-soft: #3d4a36;
+  --color-olive: #465016;
+  --color-olive-muted: #616a37;
+  --color-forest: #23280b;
+  --color-bordeaux: #764b41;
+  --color-brass: #ac9b6e;
+
+  --color-outcome-success: #3f6b2a;
+  --color-outcome-needs-human: #9a6412;
+  --color-outcome-refused: #a3262a;
+  --color-outcome-partial: #a3262a;
+
+  --font-display: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
+  --font-sans: var(--font-archivo), "Helvetica Neue", Arial, sans-serif;
+  --font-mono: var(--font-jetbrains), ui-monospace, "SFMono-Regular", Menlo, monospace;
+
+  --ease-reveal: cubic-bezier(0.05, 0.7, 0.1, 1);
+  --ease-exit: cubic-bezier(0.55, 0, 1, 0.45);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+
+  --z-canvas: 0;
+  --z-framing: 10;
+  --z-content: 20;
+  --z-overlay: 40;
+  --z-preloader: 50;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html,
+body {
+  background: var(--color-forest);
+  color: var(--color-paper);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-feature-settings: "ss01", "tnum";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--color-olive);
+  color: var(--color-paper-light);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brass);
+  outline-offset: 3px;
+}
+
+/* Heavy extended display type with an offset ink shadow, after the reference ticket titles. */
+.type-display {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 125;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.92;
+  text-shadow: 0.045em 0.05em 0 rgb(35 40 11 / 0.85);
+}
+
+.type-kicker {
+  font-family: var(--font-display);
+  font-variation-settings: "wdth" 112;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+}
+
+.type-hash {
+  font-family: var(--font-mono);
+  font-variant-ligatures: none;
+  letter-spacing: -0.01em;
+}
+
+.texture-paper {
+  background-color: var(--color-paper);
+  background-image: url("/textures/paper-grain.webp");
+  background-size: 512px 512px;
+}
+
+.texture-ink-paper {
+  background-color: var(--color-forest);
+  background-image: url("/textures/ink-paper-dark.webp");
+  background-size: cover;
+}
+
+/* Endless ribbon of squares used by the preloader. Content is duplicated, so -50% loops seamlessly. */
+@keyframes pq-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.marquee-track {
+  animation: pq-marquee 14s linear infinite;
+}
+
+/* Ticket body: scalloped corners punched out with radial masks. */
+.ticket-notched {
+  mask:
+    radial-gradient(circle 14px at top left, #0000 97%, #000) top left,
+    radial-gradient(circle 14px at top right, #0000 97%, #000) top right,
+    radial-gradient(circle 14px at bottom left, #0000 97%, #000) bottom left,
+    radial-gradient(circle 14px at bottom right, #0000 97%, #000) bottom right;
+  mask-size: 51% 51%;
+  mask-repeat: no-repeat;
+}
+
+.ticket-stripes {
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgb(246 240 225 / 0.06) 0 1px,
+    transparent 1px 80px
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marquee-track {
+    animation: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
