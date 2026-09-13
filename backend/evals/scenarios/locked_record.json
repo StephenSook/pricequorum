@@ -1,0 +1,34 @@
+{
+  "id": "locked_record",
+  "description": "The Airtable Pro record is Locked. The change must be refused, the remedy naming the flag and the system, and no app written.",
+  "runnable": true,
+  "not_runnable_reason": null,
+  "adapted_from_spec": null,
+  "request_text": "Set Pro to $25/month",
+  "fault": null,
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [
+    {
+      "action": "lock",
+      "app": "airtable",
+      "plan": "pro"
+    }
+  ],
+  "expected_outcome": "REFUSED",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2000
+    },
+    "notion": {
+      "pro": 2000
+    },
+    "airtable": {
+      "pro": 2000
+    }
+  },
+  "checks": [
+    "stripe_price_unchanged"
+  ],
+  "forbidden": true
+}

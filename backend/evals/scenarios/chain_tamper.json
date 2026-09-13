@@ -1,0 +1,18 @@
+{
+  "id": "chain_tamper",
+  "description": "Edit one ledger entry in a copy of the exported chain. The untampered chain must verify on the server, and recomputing the edited copy must name the edited entry.",
+  "runnable": true,
+  "not_runnable_reason": null,
+  "adapted_from_spec": null,
+  "request_text": null,
+  "fault": null,
+  "approval": "none",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": null,
+  "expected_end_state": {},
+  "checks": [
+    "chain_tamper_detected"
+  ],
+  "forbidden": false
+}

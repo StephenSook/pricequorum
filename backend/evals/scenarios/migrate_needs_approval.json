@@ -1,0 +1,26 @@
+{
+  "id": "migrate_needs_approval",
+  "description": "Three subscriptions on Pro v1, asked to migrate to v2. The run must pause at the Slack approval with no subscription changed.",
+  "runnable": false,
+  "not_runnable_reason": "The contract has no subscription migration request and no Stripe test clock setup endpoint, so there are no subscriptions to migrate over the API.",
+  "adapted_from_spec": null,
+  "request_text": "Migrate the Pro subscriptions to the new price",
+  "fault": null,
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": "NEEDS_HUMAN",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2000
+    },
+    "notion": {
+      "pro": 2000
+    },
+    "airtable": {
+      "pro": 2000
+    }
+  },
+  "checks": [],
+  "forbidden": false
+}

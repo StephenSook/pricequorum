@@ -1,0 +1,31 @@
+left_label,left_currency,left_interval,right_label,right_currency,right_interval,is_match,note
+Pro,usd,month,Pro,usd,month,1,identical label
+Pro,usd,month,pro,usd,month,1,case only
+Pro,usd,month,PRO plan,usd,month,1,noise word plan
+Pro,usd,month,The Pro Plan,usd,month,1,article and noise words
+Pro,usd,month,Pro (monthly),usd,month,1,interval in the label
+Pro Plus,usd,month,Pro+,usd,month,1,plus written as a symbol
+Pro Plus,usd,month,pro plus,usd,month,1,case only
+Pro Plus,usd,month,Pro Plus Tier,usd,month,1,noise word tier
+Pro EUR,eur,month,Pro EUR,eur,month,1,identical label
+Pro EUR,eur,month,Pro (EUR),eur,month,1,currency in parentheses
+Team,usd,month,Team,usd,month,1,identical label
+Team,usd,year,Team Annual,usd,year,1,interval word in label
+Starter,usd,month,Starter Plan,usd,month,1,noise word plan
+Business,usd,month,Business,usd,month,1,identical label
+Enterprise,usd,year,Enterprise yearly,usd,year,1,interval word in label
+Pro,usd,month,Pro,eur,month,0,same name different currency must never merge
+Pro,usd,month,Pro EUR,eur,month,0,euro variant of the plan
+Pro,usd,month,Pro (2023),usd,month,0,legacy plan with a year in the name
+Pro,usd,month,Pro Plus,usd,month,0,a longer plan sharing the prefix
+Pro,usd,month,Pro,usd,year,0,same name different billing interval
+Pro Plus,usd,month,Pro,usd,month,0,shorter plan sharing the prefix
+Team,usd,month,Teams Enterprise,usd,month,0,different plan with overlapping word
+Starter,usd,month,Start Up,usd,month,0,similar letters different plan
+Business,usd,month,Business Plus,usd,month,0,upgraded variant
+Pro,usd,month,Professional Services,usd,month,0,unrelated product with a similar prefix
+Pro,usd,month,Promo Pro,usd,month,0,promotional duplicate
+Enterprise,usd,year,Enterprise,usd,month,0,same name different interval
+Pro EUR,eur,month,Pro Plus EUR,eur,month,0,different plan in the same currency
+Team,usd,month,Team (legacy),usd,month,0,legacy plan marked in the name
+Starter,usd,month,Starter,gbp,month,0,same name different currency

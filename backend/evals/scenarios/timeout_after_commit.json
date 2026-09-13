@@ -1,0 +1,29 @@
+{
+  "id": "timeout_after_commit",
+  "description": "The Stripe price create times out after the price was created. Read-back must find it landed, write it exactly once, and finish every app at 25.",
+  "runnable": true,
+  "not_runnable_reason": null,
+  "adapted_from_spec": null,
+  "request_text": "Set Pro to $25/month",
+  "fault": "timeout_after_commit",
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": "SUCCESS",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2500
+    },
+    "notion": {
+      "pro": 2500
+    },
+    "airtable": {
+      "pro": 2500
+    }
+  },
+  "checks": [
+    "single_new_stripe_price",
+    "recovery_found_landed"
+  ],
+  "forbidden": false
+}

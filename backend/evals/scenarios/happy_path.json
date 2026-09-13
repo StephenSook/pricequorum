@@ -1,0 +1,28 @@
+{
+  "id": "happy_path",
+  "description": "Pro is 20 everywhere; ask for 25. Stripe gets a new price with the lookup key and default moved, the old price archived, and Notion and Airtable read back 25.",
+  "runnable": true,
+  "not_runnable_reason": null,
+  "adapted_from_spec": null,
+  "request_text": "Set Pro to $25/month",
+  "fault": null,
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": "SUCCESS",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2500
+    },
+    "notion": {
+      "pro": 2500
+    },
+    "airtable": {
+      "pro": 2500
+    }
+  },
+  "checks": [
+    "single_new_stripe_price"
+  ],
+  "forbidden": false
+}

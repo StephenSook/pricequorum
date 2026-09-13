@@ -1,0 +1,23 @@
+{
+  "id": "half_landed",
+  "description": "Stripe succeeds, then the Notion write fails before it lands: Stripe 25, Notion 20, reported PARTIAL with the failed step named.",
+  "runnable": false,
+  "not_runnable_reason": "Needs a fault that makes the Notion write fail before it lands. pricequorum/adapters/faults.py raises only after the real request was sent, so the Notion write lands and read-back recovers it, which is the timeout_after_commit path, not a half-landed run.",
+  "adapted_from_spec": null,
+  "request_text": "Set Pro to $25/month",
+  "fault": "half_landed",
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": "PARTIAL",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2500
+    },
+    "notion": {
+      "pro": 2000
+    }
+  },
+  "checks": [],
+  "forbidden": false
+}

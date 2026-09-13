@@ -1,0 +1,26 @@
+{
+  "id": "archived_referenced",
+  "description": "The old Stripe price is archived but Notion still cites it. A verify-only request must report PARTIAL and name the archived reference.",
+  "runnable": false,
+  "not_runnable_reason": "The contract has no verify-only run, and the Notion row stores a price number rather than a Stripe price id, so nothing in Notion can cite an archived price.",
+  "adapted_from_spec": null,
+  "request_text": "Verify Pro",
+  "fault": null,
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": "PARTIAL",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2000
+    },
+    "notion": {
+      "pro": 2000
+    },
+    "airtable": {
+      "pro": 2000
+    }
+  },
+  "checks": [],
+  "forbidden": false
+}

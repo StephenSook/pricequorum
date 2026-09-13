@@ -1,0 +1,29 @@
+{
+  "id": "concurrent_runs",
+  "description": "Two identical requests start at once. Exactly one may migrate the price; the other returns a clean REFUSED.",
+  "runnable": true,
+  "not_runnable_reason": null,
+  "adapted_from_spec": null,
+  "request_text": "Set Pro to $25/month",
+  "fault": null,
+  "approval": "sandbox_auto",
+  "concurrent": 2,
+  "setup": [],
+  "expected_outcome": "SUCCESS",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2500
+    },
+    "notion": {
+      "pro": 2500
+    },
+    "airtable": {
+      "pro": 2500
+    }
+  },
+  "checks": [
+    "one_success_one_refused",
+    "single_new_stripe_price"
+  ],
+  "forbidden": false
+}

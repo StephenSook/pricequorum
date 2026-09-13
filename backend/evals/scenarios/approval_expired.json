@@ -1,0 +1,26 @@
+{
+  "id": "approval_expired",
+  "description": "Nobody answers the approval before its TTL. The approval row is marked EXPIRED, the Slack message updated, nothing written.",
+  "runnable": false,
+  "not_runnable_reason": "The approval TTL is 30 minutes (policy.APPROVAL_TTL_SECONDS) and the API offers no way to shorten it for a test run, so the harness cannot wait out an expiry.",
+  "adapted_from_spec": null,
+  "request_text": "Set Pro to $25/month",
+  "fault": null,
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": "NEEDS_HUMAN",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2000
+    },
+    "notion": {
+      "pro": 2000
+    },
+    "airtable": {
+      "pro": 2000
+    }
+  },
+  "checks": [],
+  "forbidden": false
+}

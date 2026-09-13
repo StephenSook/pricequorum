@@ -1,0 +1,28 @@
+{
+  "id": "rate_limit_429",
+  "description": "Airtable answers 429 after the upsert was sent. Read-back must find the write landed and every app must end at exactly 25.",
+  "runnable": true,
+  "not_runnable_reason": null,
+  "adapted_from_spec": null,
+  "request_text": "Set Pro to $25/month",
+  "fault": "rate_limit_429",
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": "SUCCESS",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2500
+    },
+    "notion": {
+      "pro": 2500
+    },
+    "airtable": {
+      "pro": 2500
+    }
+  },
+  "checks": [
+    "recovery_found_landed"
+  ],
+  "forbidden": false
+}

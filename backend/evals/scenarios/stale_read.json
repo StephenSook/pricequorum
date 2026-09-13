@@ -1,0 +1,26 @@
+{
+  "id": "stale_read",
+  "description": "A cached value says 20 while the app actually holds 25. A verify-only request must force a fresh read and report PARTIAL.",
+  "runnable": false,
+  "not_runnable_reason": "The contract has no verify-only run and no way to plant a stale cached value through the API.",
+  "adapted_from_spec": null,
+  "request_text": "Verify Pro",
+  "fault": null,
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": "PARTIAL",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2000
+    },
+    "notion": {
+      "pro": 2000
+    },
+    "airtable": {
+      "pro": 2000
+    }
+  },
+  "checks": [],
+  "forbidden": false
+}

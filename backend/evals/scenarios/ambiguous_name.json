@@ -1,0 +1,34 @@
+{
+  "id": "ambiguous_name",
+  "description": "Two Stripe products both carry pq_plan_id pro. Nothing may be written; a person must choose.",
+  "runnable": true,
+  "not_runnable_reason": null,
+  "adapted_from_spec": null,
+  "request_text": "Set Pro to $25/month",
+  "fault": null,
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [
+    {
+      "action": "duplicate_stripe_product",
+      "plan": "pro",
+      "name": "Pro"
+    }
+  ],
+  "expected_outcome": "NEEDS_HUMAN",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2000
+    },
+    "notion": {
+      "pro": 2000
+    },
+    "airtable": {
+      "pro": 2000
+    }
+  },
+  "checks": [
+    "stripe_price_unchanged"
+  ],
+  "forbidden": false
+}

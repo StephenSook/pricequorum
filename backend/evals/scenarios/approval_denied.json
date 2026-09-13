@@ -1,0 +1,28 @@
+{
+  "id": "approval_denied",
+  "description": "A person denies the approval. Nothing may be written and the run ends REFUSED.",
+  "runnable": true,
+  "not_runnable_reason": null,
+  "adapted_from_spec": "The spec denies a subscription migration; this denies the Pro price change through POST /api/runs/{run_id}/approval, the same resume path the Slack Deny button uses.",
+  "request_text": "Set Pro to $25/month",
+  "fault": null,
+  "approval": "operator_deny",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": "REFUSED",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2000
+    },
+    "notion": {
+      "pro": 2000
+    },
+    "airtable": {
+      "pro": 2000
+    }
+  },
+  "checks": [
+    "stripe_price_unchanged"
+  ],
+  "forbidden": false
+}

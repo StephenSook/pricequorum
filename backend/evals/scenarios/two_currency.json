@@ -1,0 +1,31 @@
+{
+  "id": "two_currency",
+  "description": "Pro exists in USD and EUR. Changing the USD price must leave the EUR price untouched everywhere.",
+  "runnable": true,
+  "not_runnable_reason": null,
+  "adapted_from_spec": null,
+  "request_text": "Set Pro to 25 USD a month",
+  "fault": null,
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [],
+  "expected_outcome": "SUCCESS",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2500,
+      "pro_eur": 1900
+    },
+    "notion": {
+      "pro": 2500,
+      "pro_eur": 1900
+    },
+    "airtable": {
+      "pro": 2500,
+      "pro_eur": 1900
+    }
+  },
+  "checks": [
+    "single_new_stripe_price"
+  ],
+  "forbidden": false
+}

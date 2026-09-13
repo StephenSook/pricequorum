@@ -1,0 +1,47 @@
+{
+  "id": "idempotent_noop",
+  "description": "The change already happened: Pro is 25 everywhere. Asking again must succeed without creating a new Stripe price.",
+  "runnable": true,
+  "not_runnable_reason": null,
+  "adapted_from_spec": null,
+  "request_text": "Set Pro to $25/month",
+  "fault": null,
+  "approval": "sandbox_auto",
+  "concurrent": 1,
+  "setup": [
+    {
+      "action": "set_price",
+      "app": "stripe",
+      "plan": "pro",
+      "minor_units": 2500
+    },
+    {
+      "action": "set_price",
+      "app": "notion",
+      "plan": "pro",
+      "minor_units": 2500
+    },
+    {
+      "action": "set_price",
+      "app": "airtable",
+      "plan": "pro",
+      "minor_units": 2500
+    }
+  ],
+  "expected_outcome": "SUCCESS",
+  "expected_end_state": {
+    "stripe": {
+      "pro": 2500
+    },
+    "notion": {
+      "pro": 2500
+    },
+    "airtable": {
+      "pro": 2500
+    }
+  },
+  "checks": [
+    "stripe_price_unchanged"
+  ],
+  "forbidden": false
+}
