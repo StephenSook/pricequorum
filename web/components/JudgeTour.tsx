@@ -111,7 +111,7 @@ export function JudgeTour() {
           tabIndex={0}
           role="region"
           aria-label="Terminal commands"
-          className="type-hash mt-3 overflow-x-auto rounded-md bg-forest px-4 py-3 text-sm text-paper-light"
+          className="type-hash mt-3 overflow-x-auto whitespace-pre-wrap break-all rounded-md bg-forest px-4 py-3 text-sm text-paper-light sm:whitespace-pre sm:break-normal"
         >
           {COMMANDS.map((path) => `curl -s ${API_BASE || "<backend-url>"}${path}`).join("\n")}
         </pre>
