@@ -1,0 +1,58 @@
+name: deployed-smoke
+
+# Checks the public site the way a visitor reaches it. A green deploy command is not
+# evidence the site works; this workflow is.
+on:
+  push:
+    branches: [main]
+    paths: ["web/**", ".github/workflows/deployed-smoke.yml"]
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      SITE: https://pricequorum-web.vercel.app
+    steps:
+      - name: Wait for a push-triggered deploy to settle
+        if: github.event_name == 'push'
+        run: sleep 90
+
+      - name: Check the live page and its assets
+        run: |
+          python3 - <<'EOF'
+          import os, re, sys, urllib.request, urllib.error
+          site = os.environ["SITE"]
+          ua = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36"
+
+          def get(path):
+              req = urllib.request.Request(site + path, headers={"User-Agent": ua, "Cache-Control": "no-cache"})
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as r:
+                      return r.status, r.headers.get("content-type", ""), r.read()
+              except urllib.error.HTTPError as e:
+                  return e.code, e.headers.get("content-type", ""), e.read()
+
+          results = []
+          status, ctype, body = get("/")
+          html = body.decode("utf-8", "ignore")
+          title = re.search(r"<title>(.*?)</title>", html)
+          results.append(("GET / returns 200", status == 200, status))
+          results.append(("title is PriceQuorum", bool(title) and title.group(1) == "PriceQuorum", title.group(1) if title else None))
+          results.append(("page renders the request form", "Price change" in html and "Start the run" in html, None))
+          for asset in ["/textures/marbled-endpaper.webp", "/scenes/ledger-desk.webp"]:
+              s, t, b = get(asset)
+              results.append((f"{asset} is a webp image", s == 200 and t.startswith("image/webp") and b[:4] == b"RIFF", f"{s} {t}"))
+
+          failed = 0
+          for name, ok, detail in results:
+              print(("PASS " if ok else "FAIL ") + name + (f" ({detail})" if detail is not None else ""))
+              failed += 0 if ok else 1
+          print(f"{len(results) - failed}/{len(results)} checks passed")
+          sys.exit(1 if failed else 0)
+          EOF
