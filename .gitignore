@@ -1,0 +1,55 @@
+# Secrets and local env
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+id_rsa*
+service-account*.json
+.npmrc
+.pypirc
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+.turbo/
+*.tsbuildinfo
+.vercel/
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# OS and editors
+.DS_Store
+.AppleDouble
+._*
+.vscode/
+.idea/
+*.swp
+
+# Logs and caches
+*.log
+.cache/
+.playwright-mcp/
+
+# Local artifacts that never ship
+recordings/
+*.mov
+*.mp4
+!web/public/**/*.mp4
