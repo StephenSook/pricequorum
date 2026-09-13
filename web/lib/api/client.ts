@@ -89,25 +89,9 @@ export async function createRun(requestText: string): Promise<CreatedRun> {
   };
 }
 
-export type HealthCheck =
-  | { state: "unconfigured" }
-  | { state: "unreachable"; status: number | null }
-  | { state: "degraded"; problems: string[] }
-  | { state: "healthy" };
+import { readHealth, type HealthCheck } from "@/lib/api/health";
 
-/**
- * Reads a `GET /api/health` body. A 200 alone proves nothing (a proxy fallback page is also a
- * 200), so the backend is healthy only when the body itself says every part is up.
- */
-export function readHealth(body: unknown): HealthCheck {
-  if (!isRecord(body)) return { state: "degraded", problems: ["the health response is not the expected JSON"] };
-  const problems: string[] = [];
-  if (body.ok !== true) problems.push("the backend reports it is not ok");
-  if (body.db !== "ok") problems.push("database not ok");
-  if (body.slack_socket !== "connected") problems.push("Slack approvals not connected");
-  if (body.stripe_mode !== "test") problems.push("Stripe is not in test mode");
-  return problems.length > 0 ? { state: "degraded", problems } : { state: "healthy" };
-}
+export { readHealth, type HealthCheck };
 
 /** Best-effort warm-up call. Never throws; the caller decides what each state means. */
 export async function checkHealth(timeoutMs: number): Promise<HealthCheck> {
