@@ -5,6 +5,9 @@ import { useEffect, useState } from "react";
 import { CopyHash } from "@/components/ui/CopyHash";
 import { API_BASE } from "@/lib/api/client";
 import { parseLedgerExport, tamperCopy, verifyLedger, type ChainVerification, type LedgerExport } from "@/lib/verify/chain";
+import { verdictOf, type VerdictTone } from "@/lib/verify/verdict";
+
+const FETCH_TIMEOUT_MS = 15_000;
 
 type LoadState =
   | { kind: "loading" }
@@ -15,23 +18,24 @@ type LoadState =
 
 type Tampered = { entryId: number; field: string; result: ChainVerification } | null;
 
-function Verdict({ result }: { result: ChainVerification }) {
-  const trusted = result.chainIntact && result.headMatches && result.signatureValid !== false;
+const TONE_CLASS: Record<VerdictTone, string> = {
+  trusted: "bg-outcome-success text-paper-light",
+  caution: "bg-outcome-needs-human text-paper-light",
+  failed: "bg-outcome-refused text-paper-light",
+};
+
+function Verdict({ result, head, label }: { result: ChainVerification; head: string | null; label?: string }) {
+  const { tone, text } = verdictOf(result, head);
   return (
-    <div
-      role="status"
-      className={`rounded-md px-5 py-4 text-lg font-semibold ${trusted ? "bg-outcome-success text-paper-light" : "bg-outcome-refused text-paper-light"}`}
-    >
-      {trusted
-        ? `Chain intact: ${result.entries} entries recomputed in this browser${result.signatureValid ? ", head signature valid" : ""}.`
-        : result.firstBadId !== null
-          ? `Tampering detected at entry ${result.firstBadId}.`
-          : !result.headMatches
-            ? "The published head does not match the recomputed chain."
-            : "The head signature does not verify."}
+    // Only the real verdict is announced; the edited copy's verdict is labelled and stays silent.
+    <div role={label ? undefined : "status"} className={`rounded-md px-5 py-4 text-lg font-semibold ${TONE_CLASS[tone]}`}>
+      {label ? `${label}: ` : ""}
+      {text}
     </div>
   );
 }
+
+const reasonOf = (err: unknown) => (err instanceof Error ? err.message : String(err));
 
 export function LedgerVerifier() {
   const [state, setState] = useState<LoadState>(() => (API_BASE ? { kind: "loading" } : { kind: "unconfigured" }));
@@ -41,16 +45,23 @@ export function LedgerVerifier() {
     if (!API_BASE) return;
     let cancelled = false;
     (async () => {
+      let res: Response;
+      try {
+        res = await fetch(`${API_BASE}/api/ledger/export`, { cache: "no-store", signal: AbortSignal.timeout(FETCH_TIMEOUT_MS) });
+      } catch (err) {
+        console.warn("[PriceQuorum] GET /api/ledger/export failed", err);
+        if (!cancelled) setState({ kind: "unreachable", detail: `The ledger export at ${API_BASE} is not reachable or did not answer in time.` });
+        return;
+      }
+      if (!res.ok) {
+        if (!cancelled) setState({ kind: "unreachable", detail: `The backend answered with status ${res.status}.` });
+        return;
+      }
       let body: unknown;
       try {
-        const res = await fetch(`${API_BASE}/api/ledger/export`, { cache: "no-store" });
-        if (!res.ok) {
-          if (!cancelled) setState({ kind: "unreachable", detail: `The backend answered with status ${res.status}.` });
-          return;
-        }
         body = await res.json();
       } catch {
-        if (!cancelled) setState({ kind: "unreachable", detail: `The ledger export at ${API_BASE} is not reachable.` });
+        if (!cancelled) setState({ kind: "invalid", reasons: ["The ledger export is not valid JSON."] });
         return;
       }
       const parsed = parseLedgerExport(body);
@@ -58,8 +69,12 @@ export function LedgerVerifier() {
         if (!cancelled) setState({ kind: "invalid", reasons: parsed.reasons });
         return;
       }
-      const result = await verifyLedger(parsed.value);
-      if (!cancelled) setState({ kind: "ready", exported: parsed.value, result });
+      try {
+        const result = await verifyLedger(parsed.value);
+        if (!cancelled) setState({ kind: "ready", exported: parsed.value, result });
+      } catch (err) {
+        if (!cancelled) setState({ kind: "invalid", reasons: [`This browser could not run the check: ${reasonOf(err)}`] });
+      }
     })();
     return () => {
       cancelled = true;
@@ -70,7 +85,11 @@ export function LedgerVerifier() {
     if (state.kind !== "ready" || state.exported.rows.length === 0) return;
     const middle = state.exported.rows[Math.floor(state.exported.rows.length / 2)];
     const { copy, field } = tamperCopy(state.exported, middle.id);
-    setTampered({ entryId: middle.id, field, result: await verifyLedger(copy) });
+    try {
+      setTampered({ entryId: middle.id, field, result: await verifyLedger(copy) });
+    } catch (err) {
+      console.warn("[PriceQuorum] tamper check failed", err);
+    }
   };
 
   return (
@@ -93,7 +112,7 @@ export function LedgerVerifier() {
         ) : null}
         {state.kind === "unreachable" ? (
           <p role="alert" className="font-semibold text-outcome-needs-human">
-            {state.detail} Try again once the backend is online.
+            {state.detail} Try again in a moment.
           </p>
         ) : null}
         {state.kind === "invalid" ? (
@@ -109,7 +128,7 @@ export function LedgerVerifier() {
 
         {state.kind === "ready" ? (
           <div className="space-y-6">
-            <Verdict result={state.result} />
+            <Verdict result={state.result} head={state.exported.head} />
 
             <dl className="grid gap-2 text-sm sm:grid-cols-[9rem_minmax(0,1fr)]">
               <dt className="text-ink-soft">Entries</dt>
@@ -135,6 +154,10 @@ export function LedgerVerifier() {
                     : "does not verify"}
               </dd>
             </dl>
+            <p className="max-w-[64ch] text-sm text-ink-soft">
+              The public key arrives in the same export as the ledger. A valid signature shows the export is consistent
+              with that key; it does not by itself show who holds the key.
+            </p>
 
             {state.result.problems.length > 0 ? (
               <ul className="list-disc pl-5 text-sm text-outcome-refused">
@@ -174,7 +197,7 @@ export function LedgerVerifier() {
                   <p className="text-sm">
                     Changed field <span className="type-hash">{tampered.field}</span> in entry {tampered.entryId}.
                   </p>
-                  <Verdict result={tampered.result} />
+                  <Verdict result={tampered.result} head={state.exported.head} label="Edited copy" />
                 </div>
               ) : null}
             </div>

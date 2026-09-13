@@ -65,6 +65,9 @@ export function parseLedgerExport(body: unknown): { ok: true; value: LedgerExpor
   if (canonicalization.toUpperCase() !== "RFC8785") reasons.push(`Unsupported canonicalization "${canonicalization}".`);
   if (signature.toLowerCase() !== "ed25519") reasons.push(`Unsupported signature "${signature}".`);
 
+  const genesis = lowerHexOrNull(body.genesis);
+  if (genesis === null) reasons.push("The export has no genesis value.");
+
   if (!Array.isArray(body.rows)) reasons.push("The export has no rows array.");
   const rows: ExportRow[] = [];
   if (Array.isArray(body.rows)) {
@@ -77,12 +80,12 @@ export function parseLedgerExport(body: unknown): { ok: true; value: LedgerExpor
     });
   }
 
-  if (reasons.length > 0) return { ok: false, reasons };
+  if (reasons.length > 0 || genesis === null) return { ok: false, reasons };
   return {
     ok: true,
     value: {
       algorithm: { hash, canonicalization, signature },
-      genesis: lowerHexOrNull(body.genesis) ?? GENESIS_HEX,
+      genesis,
       rows,
       head: lowerHexOrNull(body.head),
       signature: lowerHexOrNull(body.signature),
@@ -96,6 +99,14 @@ async function sha256Hex(bytes: Uint8Array, subtle: SubtleCrypto): Promise<strin
   return etc.bytesToHex(new Uint8Array(digest));
 }
 
+function canonicalOrUndefined(payload: unknown): string | undefined {
+  try {
+    return canonicalize(payload);
+  } catch {
+    return undefined;
+  }
+}
+
 /** Recomputes every entry hash in id order and checks the signed head. Never throws on bad data. */
 export async function verifyLedger(exported: LedgerExport, subtle: SubtleCrypto = globalThis.crypto.subtle): Promise<ChainVerification> {
   const problems: string[] = [];
@@ -104,14 +115,12 @@ export async function verifyLedger(exported: LedgerExport, subtle: SubtleCrypto 
   const results: RowResult[] = [];
   let firstBadId: number | null = null;
 
-  let prev = exported.genesis;
-  if (!HEX_64.test(prev)) {
-    problems.push("The genesis value is not 32 bytes of hex.");
-    prev = GENESIS_HEX;
-  }
+  // The contract fixes the root: a chain started from any other value is not this ledger.
+  if (exported.genesis !== GENESIS_HEX) problems.push("The genesis value is not 32 zero bytes, as the chain rule requires.");
+  let prev = GENESIS_HEX;
 
   for (const row of rows) {
-    const jcs = canonicalize(row.payload);
+    const jcs = canonicalOrUndefined(row.payload);
     if (jcs === undefined || !HEX_64.test(row.prevHash) || !HEX_64.test(row.entryHash)) {
       problems.push(`Entry ${row.id} has a payload that cannot be canonicalized or a hash that is not 32 bytes of hex.`);
       results.push({ id: row.id, ok: false, prevLinkOk: false, expected: null, got: row.entryHash });

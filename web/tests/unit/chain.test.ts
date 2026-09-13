@@ -96,6 +96,33 @@ describe("verifyLedger", () => {
     expect(result.signatureValid).toBeNull();
     expect(result.chainIntact).toBe(true);
   });
+
+  it("refuses a chain rooted anywhere other than 32 zero bytes", async () => {
+    const { ledger } = await buildLedger(PAYLOADS);
+    const result = await verifyLedger({ ...ledger, genesis: "11".repeat(32) });
+    expect(result.chainIntact).toBe(false);
+    expect(result.problems).toContain("The genesis value is not 32 zero bytes, as the chain rule requires.");
+  });
+
+  it("reports a payload that cannot be canonicalized instead of throwing", async () => {
+    const { ledger } = await buildLedger(PAYLOADS);
+    const hostile = structuredClone(ledger);
+    hostile.rows[0].payload = {
+      get amount(): number {
+        throw new Error("unreadable");
+      },
+    };
+    const result = await verifyLedger(hostile);
+    expect(result.firstBadId).toBe(1);
+    expect(result.chainIntact).toBe(false);
+  });
+});
+
+describe("parseLedgerExport genesis", () => {
+  it("refuses an export without a genesis value instead of assuming one", () => {
+    const parsed = parseLedgerExport({ algorithm: { hash: "sha256", canonicalization: "RFC8785", signature: "ed25519" }, rows: [] });
+    expect(parsed).toEqual({ ok: false, reasons: ["The export has no genesis value."] });
+  });
 });
 
 describe("parseLedgerExport", () => {
