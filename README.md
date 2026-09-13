@@ -4,7 +4,7 @@ An agent that changes a SaaS plan's published price once, correctly, across Stri
 
 | | |
 |---|---|
-| **Demo video (80 s)** | https://pricequorum-web.vercel.app/demo/PriceQuorum_Demo.mp4 |
+| **Demo video (97 s)** | https://pricequorum-web.vercel.app/demo/PriceQuorum_Demo.mp4 |
 | **Live web app** | https://pricequorum-web.vercel.app |
 | **Three-minute judge tour** | https://pricequorum-web.vercel.app/judges |
 | **Backend health** | https://pricequorum-api.onrender.com/api/health |
@@ -90,7 +90,7 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:8000 npm run dev
 
 ## 5. Demo video
 
-80 seconds, built from captures of the deployed site: https://pricequorum-web.vercel.app/demo/PriceQuorum_Demo.mp4
+97 seconds: captures of the deployed site, narrated, with two short clips of Stephen made with a HeyGen avatar (the intro and the mobile note). https://pricequorum-web.vercel.app/demo/PriceQuorum_Demo.mp4
 
 ## API
 
