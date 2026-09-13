@@ -90,7 +90,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 2.13 | Chapter 02 Approve (mirrored Slack card, TTL countdown, labels for non-Slack modes) | `web/components/chapters/Approve.tsx` | Stephen | 🟡 | 1.11 | Built; unverified until the backend emits real events |
 | 2.14 | Chapter 03 Migrate (ledger sheet stamps, fault banner with `injected` label, read-back recovery) | `web/components/chapters/Migrate.tsx` | Stephen | 🟡 | 1.11 | Built; unverified until the backend emits real events |
 | 2.15 | Chapter 04 Verify (three paper columns, invariant bar) | `web/components/chapters/Verify.tsx` | Stephen | 🟡 | 1.11 | Built; unverified until the backend emits real events |
-| 2.16 | Receipt outro + `/runs/[id]` permalink | `web/app/runs/[id]/` `web/components/chapters/Receipt.tsx` | Stephen | 🟡 | 1.11 | Receipt with outcome stamp built; `/runs/[id]` permalink not built yet |
+| 2.16 | Receipt outro + `/runs/[id]` permalink | `web/app/runs/[id]/` `web/components/chapters/Receipt.tsx` | Stephen | 🟡 | 1.11 | Receipt and `/runs/[id]` permalink built and live; unverified until the backend emits real events |
 | 2.17 | WebGL paper hero shader + static fallback | `web/components/motion/PaperShader.tsx` | Stephen | ⬜ | 1.9 | |
 
 **CHECKPOINT 3:45 PM ET: one real request goes Slack approve, three writes, three read-backs, SUCCESS, rendered in the deployed UI. If not green, both lanes swarm the break before anything in Phase 3.**
@@ -117,9 +117,9 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 3.14 | Proof + `/evals` board | `web/app/evals/` | Stephen | ⬜ | 3.5 | |
 | 3.15 | `/break` judge panel streaming chapters live | `web/app/break/` | Stephen | ⬜ | 3.7 | |
 | 3.16 | Live drift strip | `web/components/DriftStrip.tsx` | Stephen | ⬜ | 3.6 | |
-| 3.17 | `/judges` itinerary with deep links and curl commands | `web/app/judges/` | Stephen | ⬜ | 3.5 | |
+| 3.17 | `/judges` itinerary with deep links and curl commands | `web/app/judges/` `web/components/JudgeTour.tsx` | Stephen | ✅ | 3.5 | Live; backend stops marked live only after a browser health check succeeds |
 | 3.18 | Sound design + subtitles toggle (muted by default) | `web/components/Sound*.tsx` | Stephen | ⬜ | 1.14 | |
-| 3.19 | Mobile pass, axe, Lighthouse | `web/` | Stephen | ⬜ | 2.16 | |
+| 3.19 | Mobile pass, axe, Lighthouse | `web/` `web/tests/e2e/` | Stephen | 🟡 | 2.16 | 14:00 ET. axe WCAG 2.1 AA 6/6 on production (desktop + mobile); mobile stills reviewed; Lighthouse not run yet |
 | 3.20 | Deployed smoke workflow against the live URL | `.github/workflows/deployed-smoke.yml` | Stephen | 🟡 | 2.11 | Page and asset checks green on `9b13a6e`; add `/api/health` and a run once the backend is deployed |
 
 **CHECKPOINT 4:45 PM ET: midpoint rubric re-audit. Count what each criterion's surface shows today, fix the weakest.**
