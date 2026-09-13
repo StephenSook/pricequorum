@@ -25,6 +25,19 @@ function preloadImage(src: string): Promise<void> {
   });
 }
 
+function healthPill(health: HealthCheck): { dot: string; text: string } {
+  switch (health.state) {
+    case "healthy":
+      return { dot: "bg-outcome-success", text: "Backend online" };
+    case "degraded":
+      return { dot: "bg-outcome-needs-human", text: `Backend degraded: ${health.problems.join(", ")}` };
+    case "unreachable":
+      return { dot: "bg-outcome-refused", text: "Backend offline" };
+    case "unconfigured":
+      return { dot: "bg-outcome-needs-human", text: "Backend not configured" };
+  }
+}
+
 type RunError = { message: string; remedy: string | null };
 
 export function Experience() {
@@ -67,6 +80,8 @@ export function Experience() {
     }
   }, []);
 
+  const pill = health ? healthPill(health) : null;
+
   return (
     <main className="relative flex min-h-svh flex-1 items-center justify-center overflow-hidden py-16">
       <SceneBackdrop dim="light" />
@@ -85,16 +100,13 @@ export function Experience() {
         <RunStage runId={runId} />
       ) : null}
 
-      {health && preloaderGone ? (
+      {pill && preloaderGone ? (
         <p
           role="status"
-          className="fixed right-8 top-8 z-[var(--z-overlay)] flex items-center gap-2 rounded-full bg-forest/90 px-4 py-2 text-sm text-paper-deep"
+          className="fixed right-8 top-8 z-[var(--z-overlay)] flex max-w-[calc(100vw-4rem)] items-center gap-2 rounded-full bg-forest/90 px-4 py-2 text-sm text-paper-deep"
         >
-          <span
-            aria-hidden="true"
-            className={health.reachable ? "h-2 w-2 rounded-full bg-outcome-success" : "h-2 w-2 rounded-full bg-outcome-needs-human"}
-          />
-          {health.reachable ? "Backend online" : "Backend offline"}
+          <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${pill.dot}`} />
+          {pill.text}
         </p>
       ) : null}
 
