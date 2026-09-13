@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Ticket } from "@/components/chapters/Ticket";
 import { Preloader } from "@/components/motion/Preloader";
 import { RoughFrame } from "@/components/motion/RoughFrame";
+import { SceneBackdrop } from "@/components/motion/SceneBackdrop";
 import { RunStage } from "@/components/RunStage";
 import { ApiError, checkHealth, createRun, type HealthCheck } from "@/lib/api/client";
 
@@ -53,6 +54,8 @@ export function Experience() {
     try {
       const created = await createRun(requestText);
       setRunId(created.runId);
+      // The address bar now names this run, so a refresh or a shared link opens its receipt.
+      window.history.replaceState(null, "", `/runs/${encodeURIComponent(created.runId)}`);
     } catch (err) {
       setError(
         err instanceof ApiError
@@ -66,14 +69,7 @@ export function Experience() {
 
   return (
     <main className="relative flex min-h-svh flex-1 items-center justify-center overflow-hidden py-16">
-      <div
-        aria-hidden="true"
-        className="fixed inset-0 z-[var(--z-canvas)] bg-cover bg-center"
-        style={{
-          backgroundImage:
-            "linear-gradient(rgb(35 40 11 / 0.35), rgb(35 40 11 / 0.55)), url(/scenes/ledger-desk.webp), url(/textures/ink-paper-dark.webp)",
-        }}
-      />
+      <SceneBackdrop dim="light" />
       <RoughFrame />
 
       {!ticketGone ? (
