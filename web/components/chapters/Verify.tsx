@@ -1,5 +1,5 @@
 import { ChapterFrame } from "@/components/chapters/ChapterFrame";
-import type { Readback, RunView } from "@/lib/api/events";
+import { agreementOf, type RunView } from "@/lib/api/events";
 import { formatMinor } from "@/lib/format";
 
 const APPS = [
@@ -8,10 +8,6 @@ const APPS = [
   { key: "airtable", name: "Airtable", role: "catalogue" },
 ] as const;
 
-type PricedReadback = Readback & { minorUnits: number; currency: string };
-
-const priced = (r: Readback | undefined): r is PricedReadback => r !== undefined && r.minorUnits !== null && r.currency !== null;
-
 const TONE_CLASS = {
   good: "bg-outcome-success text-paper-light",
   bad: "bg-outcome-refused text-paper-light",
@@ -19,36 +15,26 @@ const TONE_CLASS = {
 } as const;
 
 export function Verify({ view }: { view: RunView }) {
-  const byApp = new Map(view.readbacks.map((r) => [r.app, r]));
-  const values = APPS.map((app) => byApp.get(app.key));
-  const allReported = values.every((r) => r !== undefined);
-  const pricedValues = values.filter(priced);
-  const first = pricedValues[0];
-  const allPriced = pricedValues.length === APPS.length;
-  const agree = allPriced && pricedValues.every((r) => r.minorUnits === first.minorUnits && r.currency === first.currency);
-  const allFresh = values.every((r) => r?.fresh === true);
-  // A check that reported no result is not a pass.
-  const failing = view.invariants.filter((i) => i.ok !== true);
-  const invariantsOk = view.invariants.length > 0 && failing.length === 0;
+  const a = agreementOf(view);
 
   let tone: keyof typeof TONE_CLASS = "neutral";
   let message = "Waiting for every app to be read back.";
-  if (agree && invariantsOk && allFresh && first) {
+  if (a.proven && a.value) {
     tone = "good";
-    message = `All three agree: ${formatMinor(first.minorUnits, first.currency)}, read back fresh from each app.`;
-  } else if (agree && invariantsOk) {
+    message = `All three agree: ${formatMinor(a.value.minorUnits, a.value.currency)}, read back fresh from each app.`;
+  } else if (a.agree && a.invariantsOk) {
     tone = "bad";
     message = "The values agree, but not every app reported a fresh read, so this run cannot be called a success.";
-  } else if (allReported && !allPriced) {
+  } else if (a.allReported && !a.allPriced) {
     tone = "bad";
     message = "At least one app was read but returned no price. This run cannot be called a success.";
-  } else if (allPriced && !agree) {
+  } else if (a.allPriced && !a.agree) {
     tone = "bad";
     message = "The apps disagree. This run cannot be called a success.";
-  } else if (failing.length > 0) {
+  } else if (a.failing.length > 0) {
     tone = "bad";
-    message = `${failing.length} check${failing.length === 1 ? "" : "s"} failed or reported no result.`;
-  } else if (agree) {
+    message = `${a.failing.length} check${a.failing.length === 1 ? "" : "s"} failed or reported no result.`;
+  } else if (a.agree) {
     message = "The three values agree. Waiting for the invariant checks.";
   }
 
@@ -56,14 +42,14 @@ export function Verify({ view }: { view: RunView }) {
     <ChapterFrame index={4} title="Read all three back" tone="forest">
       <ul className="grid gap-3 sm:grid-cols-3">
         {APPS.map((app, i) => {
-          const r = values[i];
+          const r = a.readbacks[i];
           return (
             <li key={app.key} className="rounded-md border border-ink/15 bg-paper-light/80 px-4 py-4">
               <p className="font-semibold">
                 {app.name} <span className="font-normal text-ink-soft">{app.role}</span>
               </p>
               <p className="type-display mt-2 text-[clamp(1.4rem,2.6vw,2rem)] text-ink [text-shadow:none]">
-                {priced(r) ? formatMinor(r.minorUnits, r.currency) : r ? "no price found" : "not read yet"}
+                {r && r.minorUnits !== null && r.currency !== null ? formatMinor(r.minorUnits, r.currency) : r ? "no price found" : "not read yet"}
               </p>
               {r?.rawValue ? <p className="type-hash mt-1 text-xs text-ink-soft">stored as {r.rawValue}</p> : null}
             </li>

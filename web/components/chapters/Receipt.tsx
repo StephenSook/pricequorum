@@ -6,22 +6,29 @@ import { useRef } from "react";
 
 import { ChapterFrame } from "@/components/chapters/ChapterFrame";
 import { CopyHash } from "@/components/ui/CopyHash";
-import type { Outcome, RunView } from "@/lib/api/events";
+import { agreementOf, type Outcome, type RunView } from "@/lib/api/events";
 import { prefersReducedMotion } from "@/lib/motion/prefersReducedMotion";
 
 gsap.registerPlugin(useGSAP);
 
 const STAMP: Record<Outcome, { label: string; color: string; meaning: string }> = {
-  SUCCESS: { label: "Verified", color: "var(--color-outcome-success)", meaning: "Every app was read back and agrees." },
+  SUCCESS: { label: "Verified", color: "var(--color-outcome-success)", meaning: "Every app was read back fresh, the values agree, and every check passed." },
   PARTIAL: { label: "Partial", color: "var(--color-outcome-partial)", meaning: "Some writes landed and some did not. The ledger names which." },
   REFUSED: { label: "Refused", color: "var(--color-outcome-refused)", meaning: "A rule blocked this change." },
   NEEDS_HUMAN: { label: "Needs a person", color: "var(--color-outcome-needs-human)", meaning: "PriceQuorum would not guess." },
 };
 
+// The backend's word alone does not earn the Verified stamp; the read-backs on this page must prove it.
+const SUCCESS_UNPROVEN = {
+  label: "Success reported",
+  color: "var(--color-outcome-needs-human)",
+  meaning: "The backend reported success, but this page did not receive fresh read-backs from all three apps that agree with every check passing.",
+};
+
 export function Receipt({ view }: { view: RunView }) {
   const stamp = useRef<HTMLDivElement>(null);
   const outcome = view.outcome;
-  const style = outcome?.outcome ? STAMP[outcome.outcome] : null;
+  const style = !outcome ? null : outcome.outcome === "SUCCESS" && !agreementOf(view).proven ? SUCCESS_UNPROVEN : STAMP[outcome.outcome];
 
   // The one loud moment of the run: the outcome stamp lands.
   useGSAP(
