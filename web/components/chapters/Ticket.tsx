@@ -210,9 +210,9 @@ export function Ticket({ active, leaving, submitting, error, onSubmit, onExited 
 
           <div
             ref={stub}
-            className="ticket-notched relative flex items-center justify-center border-t-2 border-dashed border-paper/30 bg-olive px-6 py-4 sm:w-[12%] sm:border-l-2 sm:border-t-0 sm:px-2"
+            className="ticket-notched relative flex items-center justify-center border-t-2 border-dashed border-paper/30 bg-olive px-6 py-4 sm:w-[14%] sm:min-w-[132px] sm:border-l-2 sm:border-t-0 sm:px-3"
           >
-            <ul aria-label="Connected apps" className="flex gap-4 text-sm font-semibold text-paper-deep sm:flex-col sm:gap-6 sm:[writing-mode:vertical-rl]">
+            <ul aria-label="Connected apps" className="flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm font-semibold text-paper-deep sm:flex-col sm:items-center sm:gap-5">
               {APPS.map((app) => (
                 <li key={app}>{app}</li>
               ))}
