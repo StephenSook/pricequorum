@@ -37,19 +37,19 @@ Deadline: **7:00 PM ET submission**, confirmation verified by 6:55 ET.
 - [-] **2.13** Chapter 02 Approve built: mirrored approval card, approver name, TTL countdown, labels for operator or sandbox approvals. Unverified until real events arrive
 - [-] **2.14** Chapter 03 Migrate built: ruled ledger sheet, fault banner with the injected label, read-back recovery text. Unverified until real events arrive
 - [-] **2.15** Chapter 04 Verify built: three read-back columns in minor units, invariant bar. Unverified until real events arrive
-- [-] **2.16** Receipt built: outcome stamp, truncated hashes with copy, signature, public key. `/runs/[id]` permalink still to build
+- [-] **2.16** Receipt and `/runs/[id]` permalink built and live: outcome stamp, truncated hashes with copy, signature, public key. Unverified until real events arrive
 - [ ] **2.17** WebGL paper shader with static fallback
 
 ## Phase 3
 
-- [ ] **3.13** `/verify`: `canonicalize` (RFC 8785) + WebCrypto SHA-256 recompute of the chain from `/api/ledger/export`, `@noble/ed25519` signature check, tamper toggle that flips one byte locally
+- [-] **3.13** `/verify` live: RFC 8785 + WebCrypto SHA-256 chain recompute, `@noble/ed25519` head check, local tamper test, golden vectors matching Python. Waits on a real `/api/ledger/export`
 - [ ] **3.14** Proof + `/evals` board (pass count, Wilson interval, per-outcome counts, named failure)
 - [ ] **3.15** `/break` judge panel: timeout after commit, prompt injection, locked record, chain tamper, concurrent runs, drift. Each streams live chapters.
 - [ ] **3.16** Live drift strip from `/api/monitor/events`
-- [ ] **3.17** `/judges` three-minute itinerary with deep links and curl commands
+- [x] **3.17** `/judges` three-minute tour with deep links and curl commands, backend stops gated on a live health check
 - [ ] **3.18** Sound (stamp, paper, chain) muted by default + subtitles toggle
-- [ ] **3.19** Mobile 390 px pass, axe, Lighthouse
-- [ ] **3.20** `deployed-smoke.yml`: Playwright against the live URL
+- [-] **3.19** axe WCAG 2.1 AA 6/6 on production, mobile stills reviewed. Lighthouse still to run
+- [-] **3.20** `deployed-smoke.yml` live and green. Add `/api/health` and a real run once the backend is deployed
 
 ## Phase 4 (submission, all yours)
 
