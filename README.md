@@ -27,6 +27,17 @@ A run is reported as SUCCESS only after a fresh read of all three apps agrees. E
 | `/evals` | Scenario pass rate, refusals, duplicate writes prevented, named failures | Yes |
 | `/judges` | A short tour that marks each stop live only after the backend answers | No |
 
+## Mobile app
+
+The same run, receipt and on-device ledger check, for a founder on a phone. Approval stays in Slack.
+
+| Platform | How to get it | State |
+|---|---|---|
+| Android | [pricequorum-android.apk](https://github.com/StephenSook/pricequorum/releases/download/v1.0.0/pricequorum-android.apk) from release [v1.0.0](https://github.com/StephenSook/pricequorum/releases/tag/v1.0.0) | Signed APK. SHA-256 `8630ce45e6c2177f1b2a8b55d1849992d794e3e4394cfaab73d90952f1e40f41` |
+| iOS | TestFlight | Build 2 is in internal testing. The public link opens once Apple's beta review approves it. |
+
+Without a backend address the app says it is not configured; set one in Settings.
+
 ## How the web app is checked
 
 - `.github/workflows/web.yml` runs on every push to `web/`: contract drift check, typecheck, lint, unit tests, production build.
@@ -54,6 +65,7 @@ BASE_URL=http://localhost:3000 npm run e2e
 ## Repository
 
 - `web/`: Next.js app (App Router, Tailwind 4, GSAP)
+- `mobile/`: Expo app for iOS and Android, sharing the run and ledger logic with `web/`
 - `backend/`: FastAPI service (being built, not in the repository yet)
 - `docs/contracts/api.md`: the API and event-stream contract between the two
 - `PLAN.md`: task status and ownership
