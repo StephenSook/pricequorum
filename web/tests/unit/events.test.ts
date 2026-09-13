@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 
-import { currentChapter, envelopeFrom, foldEnvelopes, initialRunView, parseEnvelope, reduceRun, type Envelope } from "@/lib/api/events";
+import {
+  currentChapter,
+  envelopeFrom,
+  foldEnvelopes,
+  initialRunView,
+  isTerminalOutcome,
+  parseEnvelope,
+  reduceRun,
+  type Envelope,
+} from "@/lib/api/events";
 
 const RUN = "3f7c1a52-0000-4000-8000-000000000001";
 
@@ -20,16 +29,27 @@ describe("parseEnvelope", () => {
     expect(parsed).toEqual({ seq: 3, runId: RUN, type: "run.created", at: "t", payload: { request_text: "raise Pro" } });
   });
 
-  it("rejects invalid JSON and envelopes missing seq, run_id or type", () => {
+  it("rejects invalid JSON and envelopes missing seq, run_id, type or an object payload", () => {
     expect(parseEnvelope("not json")).toBeNull();
-    expect(parseEnvelope(JSON.stringify({ run_id: RUN, type: "x" }))).toBeNull();
-    expect(parseEnvelope(JSON.stringify({ seq: 1, type: "x" }))).toBeNull();
-    expect(parseEnvelope(JSON.stringify({ seq: 1, run_id: RUN }))).toBeNull();
+    expect(parseEnvelope(JSON.stringify({ run_id: RUN, type: "x", payload: {} }))).toBeNull();
+    expect(parseEnvelope(JSON.stringify({ seq: 1, type: "x", payload: {} }))).toBeNull();
+    expect(parseEnvelope(JSON.stringify({ seq: 1, run_id: RUN, payload: {} }))).toBeNull();
+    expect(parseEnvelope(JSON.stringify({ seq: 1, run_id: RUN, type: "run.outcome" }))).toBeNull();
+    expect(parseEnvelope(JSON.stringify({ seq: 1, run_id: RUN, type: "run.outcome", payload: "SUCCESS" }))).toBeNull();
   });
 
   it("rejects a fractional sequence number and accepts decoded objects from events.json", () => {
-    expect(envelopeFrom({ seq: 1.5, run_id: RUN, type: "run.created" })).toBeNull();
-    expect(envelopeFrom({ seq: 2, run_id: RUN, type: "run.created" })).toMatchObject({ seq: 2, payload: {} });
+    expect(envelopeFrom({ seq: 1.5, run_id: RUN, type: "run.created", payload: {} })).toBeNull();
+    expect(envelopeFrom({ seq: 2, run_id: RUN, type: "run.created", payload: {} })).toMatchObject({ seq: 2, payload: {} });
+  });
+});
+
+describe("isTerminalOutcome", () => {
+  it("is true only for a run.outcome carrying one of the four outcomes", () => {
+    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "SUCCESS" }))).toBe(true);
+    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "DONE" }))).toBe(false);
+    expect(isTerminalOutcome(envelope(1, "run.outcome", {}))).toBe(false);
+    expect(isTerminalOutcome(envelope(1, "run.status", { outcome: "SUCCESS" }))).toBe(false);
   });
 });
 
@@ -108,13 +128,17 @@ describe("reduceRun", () => {
     ]);
   });
 
-  it("records subscriber migrations and the renewal invoice", () => {
+  it("keeps every migration of the same subscription so a duplicate write stays visible", () => {
+    const move = { subscription_id: "sub_1", from_price: "price_old", to_price: "price_new", proration_behavior: "none" };
     const view = apply(
-      envelope(1, "subscription.migrated", { subscription_id: "sub_1", from_price: "price_old", to_price: "price_new", proration_behavior: "none" }),
-      envelope(2, "subscription.migrated", { subscription_id: "sub_1", from_price: "price_old", to_price: "price_new", proration_behavior: "none" }),
+      envelope(1, "subscription.migrated", move),
+      envelope(2, "subscription.migrated", move),
       envelope(3, "renewal.invoice", { invoice_id: "in_1", amount: { minor_units: 2500, currency: "usd" }, test_clock_id: "clock_1" }),
     );
-    expect(view.subscriptions).toEqual([{ subscriptionId: "sub_1", fromPrice: "price_old", toPrice: "price_new", prorationBehavior: "none" }]);
+    expect(view.subscriptions.map((s) => [s.seq, s.subscriptionId])).toEqual([
+      [1, "sub_1"],
+      [2, "sub_1"],
+    ]);
     expect(view.renewalInvoice).toEqual({ invoiceId: "in_1", minorUnits: 2500, currency: "usd", testClockId: "clock_1" });
     expect(currentChapter(view)).toBe("migrate");
   });
@@ -124,11 +148,11 @@ describe("reduceRun", () => {
     expect(view.unrecognized).toEqual([{ seq: 9, type: "brand.new.event" }]);
   });
 
-  it("rejects an outcome string outside the four classes", () => {
+  it("rejects an outcome outside the four classes instead of showing a receipt", () => {
     const view = apply(envelope(1, "run.outcome", { outcome: "DONE", chain_head: "cc" }));
-    expect(view.outcome?.outcome).toBeNull();
-    expect(view.outcome?.chainHead).toBe("cc");
-    expect(currentChapter(view)).toBe("receipt");
+    expect(view.outcome).toBeNull();
+    expect(view.rejected).toEqual([{ seq: 1, type: "run.outcome" }]);
+    expect(currentChapter(view)).toBe("waiting");
   });
 
   it("walks chapters in order as real events arrive", () => {
@@ -140,6 +164,9 @@ describe("reduceRun", () => {
     expect(currentChapter(view)).toBe("approve");
     view = reduceRun(view, envelope(3, "approval.decided", { decision: "APPROVED", approver_display: "Stephen" }));
     expect(view.approval).toMatchObject({ phase: "decided", decision: "APPROVED", summary: "Pro 20 to 25", mode: "slack" });
+    view = reduceRun(view, envelope(4, "run.outcome", { outcome: "SUCCESS", chain_head: "cc" }));
+    expect(view.outcome).toMatchObject({ outcome: "SUCCESS", chainHead: "cc" });
+    expect(currentChapter(view)).toBe("receipt");
   });
 });
 

@@ -8,6 +8,7 @@ import {
   envelopeFrom,
   foldEnvelopes,
   initialRunView,
+  isTerminalOutcome,
   parseEnvelope,
   type Envelope,
   type RunView,
@@ -16,7 +17,7 @@ import {
 /**
  * - `retrying`: the stream has never opened and the browser keeps trying.
  * - `reconnecting`: the stream was open and dropped.
- * - `closed`: the run reported its outcome.
+ * - `closed`: the run reported a valid outcome.
  * - `failed`: the browser gave up (for example the backend answered 404 or 500).
  */
 export type StreamState = "idle" | "connecting" | "open" | "retrying" | "reconnecting" | "closed" | "failed" | "unavailable";
@@ -34,11 +35,11 @@ const REPLAY_TIMEOUT_MS = 10_000;
  *   Last-Event-ID, so the stream alone cannot be relied on for history.
  * - It subscribes to `GET /api/runs/{id}/events` for what happens next. Envelopes are kept by
  *   sequence number, so replayed or interleaved envelopes never duplicate a step.
- * - When the run ends it loads `events.json` again, which also carries event types the stream
- *   listeners cannot name.
+ * - The run ends only on a `run.outcome` with a valid outcome; then `events.json` is loaded
+ *   again, which also carries event types the stream listeners cannot name.
  *
- * State only changes inside callbacks; everything returned is derived from `runId`, so
- * switching runs never shows the previous run's events or stream status.
+ * Every callback checks that its effect is still current, so an old run's queued event can
+ * never touch a new run. Everything returned is derived from `runId`.
  */
 export function useRunEvents(runId: string | null): { view: RunView | null; stream: StreamState; invalidMessages: number } {
   const [held, setHeld] = useState<Held | null>(null);
@@ -55,6 +56,7 @@ export function useRunEvents(runId: string | null): { view: RunView | null; stre
     let finished = false;
 
     const finish = (reconcile: boolean) => {
+      if (cancelled) return;
       finished = true;
       source.close();
       setStreamFor({ runId, value: "closed" });
@@ -62,13 +64,13 @@ export function useRunEvents(runId: string | null): { view: RunView | null; stre
     };
 
     const absorb = (envelopes: Envelope[], fromReplay: boolean) => {
-      if (envelopes.length === 0) return;
+      if (cancelled || envelopes.length === 0) return;
       setHeld((prev) => {
         const bySeq = new Map(prev && prev.runId === runId ? prev.bySeq : undefined);
         for (const envelope of envelopes) if (!bySeq.has(envelope.seq)) bySeq.set(envelope.seq, envelope);
         return { runId, bySeq };
       });
-      if (!finished && envelopes.some((e) => e.type === "run.outcome")) finish(!fromReplay);
+      if (!finished && envelopes.some(isTerminalOutcome)) finish(!fromReplay);
     };
 
     const replay = async () => {
@@ -92,6 +94,7 @@ export function useRunEvents(runId: string | null): { view: RunView | null; stre
     };
 
     const handle = (message: MessageEvent<string>) => {
+      if (cancelled) return;
       const envelope = parseEnvelope(message.data);
       if (!envelope || envelope.runId !== runId) {
         setStreamInvalid((prev) => ({ runId, value: prev && prev.runId === runId ? prev.value + 1 : 1 }));
@@ -101,11 +104,12 @@ export function useRunEvents(runId: string | null): { view: RunView | null; stre
     };
 
     source.onopen = () => {
+      if (cancelled || finished) return;
       opened = true;
       setStreamFor({ runId, value: "open" });
     };
     source.onerror = () => {
-      if (finished) return;
+      if (cancelled || finished) return;
       const value: StreamState = source.readyState === EventSource.CLOSED ? "failed" : opened ? "reconnecting" : "retrying";
       setStreamFor({ runId, value });
     };
@@ -115,6 +119,9 @@ export function useRunEvents(runId: string | null): { view: RunView | null; stre
 
     return () => {
       cancelled = true;
+      source.onopen = null;
+      source.onerror = null;
+      source.onmessage = null;
       for (const type of KNOWN_EVENT_TYPES) source.removeEventListener(type, handle as EventListener);
       source.close();
     };

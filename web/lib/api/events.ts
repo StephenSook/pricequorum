@@ -4,8 +4,8 @@
  *
  * Every field is read defensively from the envelope the backend actually sent. Nothing is
  * synthesised: a missing field stays null. An event type this client does not know is
- * recorded in `unrecognized`, and a ledger event that names no known step is recorded in
- * `unplaced`, so both show up during integration instead of vanishing.
+ * recorded in `unrecognized`, a ledger event that names no known step in `unplaced`, and an
+ * event whose required fields are invalid in `rejected`, so none of them vanish.
  *
  * The live stream only delivers the named types in KNOWN_EVENT_TYPES (an EventSource cannot
  * listen for every name), so `useRunEvents` also loads `events.json`, which carries every
@@ -73,6 +73,7 @@ export type Readback = {
 export type Invariant = { name: string | null; ok: boolean | null; detail: string | null; outcome: Outcome | null };
 
 export type SubscriptionMove = {
+  seq: number;
   subscriptionId: string | null;
   fromPrice: string | null;
   toPrice: string | null;
@@ -115,12 +116,13 @@ export type RunView = {
     decidedAt: string | null;
   } | null;
   ledger: LedgerStep[];
+  /** Every migration event, one entry per sequence number, so a repeated migration stays visible. */
   subscriptions: SubscriptionMove[];
   renewalInvoice: RenewalInvoice | null;
   readbacks: Readback[];
   invariants: Invariant[];
   outcome: {
-    outcome: Outcome | null;
+    outcome: Outcome;
     remedy: string | null;
     chainHead: string | null;
     signature: string | null;
@@ -130,6 +132,8 @@ export type RunView = {
   unrecognized: SeenEvent[];
   /** Ledger events that name no ledger step this page has seen. */
   unplaced: SeenEvent[];
+  /** Events whose required fields are missing or invalid. */
+  rejected: SeenEvent[];
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -159,12 +163,12 @@ function money(o: Record<string, unknown>): { minorUnits: number | null; currenc
 
 /** Validates one decoded envelope object (from the stream or from `events.json`). Returns null when invalid. */
 export function envelopeFrom(data: unknown): Envelope | null {
-  if (!isRecord(data)) return null;
+  if (!isRecord(data) || !isRecord(data.payload)) return null;
   const seq = num(data, "seq");
   const runId = str(data, "run_id");
   const type = str(data, "type");
   if (seq === null || !Number.isInteger(seq) || runId === null || type === null) return null;
-  return { seq, runId, type, at: str(data, "at") ?? "", payload: rec(data, "payload") };
+  return { seq, runId, type, at: str(data, "at") ?? "", payload: data.payload };
 }
 
 /** Parses one SSE `data:` payload. Returns null when the message is not a valid envelope. */
@@ -176,6 +180,11 @@ export function parseEnvelope(raw: string): Envelope | null {
     return null;
   }
   return envelopeFrom(data);
+}
+
+/** True only for a `run.outcome` carrying one of the four outcomes. A truncated one does not end a run. */
+export function isTerminalOutcome(envelope: Envelope): boolean {
+  return envelope.type === "run.outcome" && outcomeOf(str(envelope.payload, "outcome")) !== null;
 }
 
 export function initialRunView(runId: string): RunView {
@@ -196,14 +205,17 @@ export function initialRunView(runId: string): RunView {
     outcome: null,
     unrecognized: [],
     unplaced: [],
+    rejected: [],
   };
 }
+
+const seen = (event: Envelope): SeenEvent => ({ seq: event.seq, type: event.type });
 
 /** Applies a patch to the ledger step the event names, or records the event as unplaced. */
 function placeOnStep(view: RunView, next: RunView, event: Envelope, patch: (step: LedgerStep) => LedgerStep): RunView {
   const ledgerId = num(event.payload, "ledger_id");
   if (ledgerId === null || !view.ledger.some((step) => step.ledgerId === ledgerId)) {
-    return { ...next, unplaced: [...view.unplaced, { seq: event.seq, type: event.type }] };
+    return { ...next, unplaced: [...view.unplaced, seen(event)] };
   }
   return { ...next, ledger: view.ledger.map((step) => (step.ledgerId === ledgerId ? patch(step) : step)) };
 }
@@ -272,7 +284,7 @@ export function reduceRun(view: RunView, event: Envelope): RunView {
       };
     case "ledger.pending": {
       const ledgerId = num(p, "ledger_id");
-      if (ledgerId === null) return { ...next, unplaced: [...view.unplaced, { seq: event.seq, type: event.type }] };
+      if (ledgerId === null) return { ...next, unplaced: [...view.unplaced, seen(event)] };
       const step: LedgerStep = {
         ledgerId,
         stepNo: num(p, "step_no"),
@@ -307,18 +319,20 @@ export function reduceRun(view: RunView, event: Envelope): RunView {
         prevHash: str(p, "prev_hash"),
         entryHash: str(p, "entry_hash"),
       }));
-    case "subscription.migrated": {
-      const move: SubscriptionMove = {
-        subscriptionId: str(p, "subscription_id"),
-        fromPrice: str(p, "from_price"),
-        toPrice: str(p, "to_price"),
-        prorationBehavior: str(p, "proration_behavior"),
-      };
+    case "subscription.migrated":
       return {
         ...next,
-        subscriptions: [...view.subscriptions.filter((s) => move.subscriptionId === null || s.subscriptionId !== move.subscriptionId), move],
+        subscriptions: [
+          ...view.subscriptions,
+          {
+            seq: event.seq,
+            subscriptionId: str(p, "subscription_id"),
+            fromPrice: str(p, "from_price"),
+            toPrice: str(p, "to_price"),
+            prorationBehavior: str(p, "proration_behavior"),
+          },
+        ],
       };
-    }
     case "renewal.invoice":
       return {
         ...next,
@@ -342,19 +356,23 @@ export function reduceRun(view: RunView, event: Envelope): RunView {
         invariants: [...view.invariants.filter((i) => invariant.name === null || i.name !== invariant.name), invariant],
       };
     }
-    case "run.outcome":
+    case "run.outcome": {
+      const outcome = outcomeOf(str(p, "outcome"));
+      // An outcome outside the four classes does not produce a receipt.
+      if (outcome === null) return { ...next, rejected: [...view.rejected, seen(event)] };
       return {
         ...next,
         outcome: {
-          outcome: outcomeOf(str(p, "outcome")),
+          outcome,
           remedy: str(p, "remedy"),
           chainHead: str(p, "chain_head"),
           signature: str(p, "signature"),
           publicKey: str(p, "public_key"),
         },
       };
+    }
     default:
-      return { ...next, unrecognized: [...view.unrecognized, { seq: event.seq, type: event.type }] };
+      return { ...next, unrecognized: [...view.unrecognized, seen(event)] };
   }
 }
 

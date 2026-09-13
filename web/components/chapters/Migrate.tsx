@@ -65,13 +65,27 @@ function StepRow({ step }: { step: LedgerStep }) {
 function ExistingSubscribers({ view }: { view: RunView }) {
   const invoice = view.renewalInvoice;
   if (view.subscriptions.length === 0 && !invoice) return null;
+
+  const counts = new Map<string, number>();
+  for (const move of view.subscriptions) {
+    if (move.subscriptionId) counts.set(move.subscriptionId, (counts.get(move.subscriptionId) ?? 0) + 1);
+  }
+  const repeated = [...counts].filter(([, n]) => n > 1).map(([id]) => id);
+
   return (
     <div className="mt-4 rounded-md border border-ink/15 bg-paper-light/70 px-4 py-3 text-sm">
       <p className="font-semibold">Existing subscribers</p>
+      {repeated.length > 0 ? (
+        <p role="alert" className="mt-2 font-semibold text-outcome-refused">
+          {repeated.length === 1
+            ? `Subscription ${repeated[0]} was migrated more than once.`
+            : `${repeated.length} subscriptions were migrated more than once.`}
+        </p>
+      ) : null}
       {view.subscriptions.length > 0 ? (
         <ul className="mt-2 space-y-1">
-          {view.subscriptions.map((move, index) => (
-            <li key={move.subscriptionId ?? index} className="flex flex-wrap gap-x-2">
+          {view.subscriptions.map((move) => (
+            <li key={move.seq} className="flex flex-wrap gap-x-2">
               <span className="type-hash">{move.subscriptionId ?? "subscription id not reported"}</span>
               <span className="text-ink-soft">moved from</span>
               <span className="type-hash">{move.fromPrice ?? "price not reported"}</span>

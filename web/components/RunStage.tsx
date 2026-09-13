@@ -65,6 +65,7 @@ export function RunStage({ runId }: { runId: string }) {
   const notes = [
     view.unrecognized.length > 0 ? `${plural(view.unrecognized.length, "event")} this page does not display yet` : null,
     view.unplaced.length > 0 ? `${plural(view.unplaced.length, "ledger event")} that named no known step` : null,
+    view.rejected.length > 0 ? `${plural(view.rejected.length, "event")} rejected for missing or invalid fields` : null,
     invalidMessages > 0 ? `${plural(invalidMessages, "malformed message")} ignored` : null,
   ].filter(Boolean);
 
