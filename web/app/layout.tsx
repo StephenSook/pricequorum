@@ -17,10 +17,21 @@ const jetbrains = JetBrains_Mono({
   display: "swap",
 });
 
+// Stamped at deploy time (vercel --prod --build-env NEXT_PUBLIC_BUILD_SHA=<commit>) so the
+// deployed-smoke workflow can prove which commit the live site is serving.
+const BUILD_SHA = process.env.NEXT_PUBLIC_BUILD_SHA ?? process.env.VERCEL_GIT_COMMIT_SHA ?? "unknown";
+
+const DESCRIPTION =
+  "Change a SaaS price once across Stripe, Notion and Airtable, approved in Slack and verified by reading every system back.";
+
 export const metadata: Metadata = {
+  metadataBase: new URL("https://pricequorum-web.vercel.app"),
   title: "PriceQuorum",
-  description:
-    "Change a SaaS price once across Stripe, Notion and Airtable, approved in Slack and verified by reading every system back.",
+  description: DESCRIPTION,
+  // The preview image comes from app/opengraph-image.tsx.
+  openGraph: { title: "PriceQuorum", description: DESCRIPTION, url: "/", siteName: "PriceQuorum", type: "website" },
+  twitter: { card: "summary_large_image", title: "PriceQuorum", description: DESCRIPTION },
+  other: { "pq-build": BUILD_SHA },
 };
 
 export const viewport: Viewport = {
