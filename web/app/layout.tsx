@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Archivo, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
+import { HydrationMark } from "@/components/HydrationMark";
+
 // Archivo carries both roles: extended heavy display (wdth 125) and normal-width UI text.
 const archivo = Archivo({
   variable: "--font-archivo",
@@ -41,7 +43,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${archivo.variable} ${jetbrains.variable} h-full`}>
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <HydrationMark />
+        {children}
+      </body>
     </html>
   );
 }

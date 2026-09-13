@@ -13,6 +13,11 @@ on:
 permissions:
   contents: read
 
+# A newer push supersedes an older push run that is still waiting for its deployment.
+concurrency:
+  group: deployed-smoke-${{ github.event_name }}
+  cancel-in-progress: true
+
 jobs:
   smoke:
     runs-on: ubuntu-latest
@@ -20,16 +25,15 @@ jobs:
       SITE: https://pricequorum-web.vercel.app
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       # The site is deployed from the CLI with the commit stamped into the build. On a push, wait a
-      # bounded time for the live build to contain this commit, so a stale deployment fails the run.
-      - name: Live build contains this commit
+      # bounded time for the live build to be exactly this commit, so a stale deployment, or one made
+      # from a commit that is not on main, fails the run.
+      - name: Live build is this commit
         if: github.event_name == 'push'
         run: |
           python3 - <<'EOF'
-          import os, re, subprocess, sys, time, urllib.request
+          import os, re, sys, time, urllib.request
           site, want = os.environ["SITE"], os.environ["GITHUB_SHA"]
           ua = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36"
           for attempt in range(1, 21):
@@ -41,12 +45,12 @@ jobs:
                   live = match.group(1) if match else None
               except Exception as exc:
                   print(f"attempt {attempt}: fetch failed: {exc}")
-              if live and subprocess.run(["git", "merge-base", "--is-ancestor", want, live], capture_output=True).returncode == 0:
-                  print(f"PASS live build {live} contains {want}")
+              if live == want:
+                  print(f"PASS live build is {want}")
                   sys.exit(0)
-              print(f"attempt {attempt}: live build is {live}, waiting for a build containing {want}")
+              print(f"attempt {attempt}: live build is {live}, waiting for {want}")
               time.sleep(30)
-          print(f"FAIL the live site never served a build containing {want}. Deploy from web/ with the commit stamped.")
+          print(f"FAIL the live site never served {want}. Deploy that commit from web/ with the commit stamped.")
           sys.exit(1)
           EOF
 
@@ -100,8 +104,8 @@ jobs:
         working-directory: web
         run: npx playwright install --with-deps chromium
 
-      # Real browser, desktop and phone: every route runs its JavaScript without an uncaught error
-      # or a hydration failure, and axe finds no serious or critical WCAG 2.1 AA violation.
+      # Real browser, desktop and phone: every route hydrates and runs without errors, and axe finds
+      # no serious or critical WCAG 2.1 AA violation.
       - name: Browser smoke and accessibility
         working-directory: web
         run: npm run e2e

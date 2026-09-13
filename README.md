@@ -30,7 +30,7 @@ A run is reported as SUCCESS only after a fresh read of all three apps agrees. E
 ## How the web app is checked
 
 - `.github/workflows/web.yml` runs on every push to `web/`: contract drift check, typecheck, lint, unit tests, production build.
-- `.github/workflows/deployed-smoke.yml` checks the live site on every push to `web/` and every 30 minutes. On a push it waits for the live build to contain that commit, so a stale deployment fails. It then loads every route in a real browser on desktop and phone (`web/tests/e2e/`), failing on an uncaught error, a hydration failure, or a serious or critical axe (WCAG 2.1 A and AA) violation.
+- `.github/workflows/deployed-smoke.yml` checks the live site on every push to `web/` and every 30 minutes. On a push it waits for the live build to be exactly that commit, so a stale deployment fails. It then loads every route in a real browser on desktop and phone (`web/tests/e2e/`), failing unless the route hydrates with no uncaught error, console error or failed asset, and with no serious or critical axe (WCAG 2.1 A and AA) violation.
 - The browser ledger verifier is tested against hashes computed independently with Python's `hashlib`.
 
 ## Run the web app locally
