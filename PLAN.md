@@ -65,7 +65,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 1.8 | Backend CI: ruff format check, ruff, mypy, pytest, pip-licenses, gitleaks | `.github/workflows/backend.yml` | Tylin | ⬜ | 1.1 | Every gate bare, no pipes |
 | 1.9 | Web scaffold: Next.js 16 App Router, Tailwind 4, fonts, tokens, ESLint, Vitest | `web/` | Stephen | ✅ | n/a | tsc and eslint clean |
 | 1.10 | Web CI: `openapi-typescript` drift check vs `shared/openapi.json`, tsc, eslint, vitest, build | `.github/workflows/web.yml` | Stephen | ✅ | 1.9 | Green on `cbef0a5`, read from check-runs |
-| 1.11 | Generated types, API client, SSE hook with replay, run reducer + tests | `web/lib/api/` | Stephen | 🟡 | 1.3 | 13:25 ET. Client, reducer, replay-safe SSE hook and 15 unit tests done; generated types wait on `shared/openapi.json` |
+| 1.11 | Generated types, API client, SSE hook with replay, run reducer + tests | `web/lib/api/` | Stephen | 🟡 | 1.3 | 13:25 ET. Client, reducer and replay-safe SSE hook done, 9 reducer tests; generated types wait on `shared/openapi.json` |
 | 1.12 | Preloader: ribbons, logo clip reveal, min 2 s, waits for assets + `/api/health` | `web/components/motion/Preloader.tsx` | Stephen | ✅ | 1.9 | Visual pass on stills |
 | 1.13 | Ticket intro + request form posting `/api/runs` | `web/components/chapters/Ticket.tsx` | Stephen | ✅ | 1.11 | Visual pass on desktop and 390 px stills |
 | 1.14 | Motion primitives: reveal group, masked word reveal, word stagger, framing ribbons, CTA, reduced motion | `web/components/motion/` | Stephen | 🟡 | 1.9 | 13:25 ET. In components; reduced motion respected |
@@ -113,7 +113,7 @@ Legend: ✅ done · 🟡 in progress · ⬜ not started · ⛔ blocked · ✂️
 | 3.10 | HTTP MCP server + printed curl | `backend/mcp/server.py` | Khadim | ⬜ | 2.10 | |
 | 3.11 | Arga twins spike, 30 minute cap, keep only if it writes | `backend/evals/` | Khadim | ⬜ | 3.1 | |
 | 3.12 | Mutation-test the eval gates both directions | `backend/evals/` | Khadim | ⬜ | 3.1 | |
-| 3.13 | `/verify`: browser recomputes JCS + SHA-256 chain, verifies Ed25519 signature, tamper toggle | `web/app/verify/` `web/lib/verify/` | Stephen | 🟡 | 3.4 | Built and live; 12 tests incl. golden vectors matching Python hashlib. Unverified against a real export until 3.4 exists |
+| 3.13 | `/verify`: browser recomputes JCS + SHA-256 chain, verifies Ed25519 signature, tamper toggle | `web/app/verify/` `web/lib/verify/` | Stephen | 🟡 | 3.4 | Built and live; 11 tests incl. golden vectors matching Python hashlib. Unverified against a real export until 3.4 exists |
 | 3.14 | Proof + `/evals` board | `web/app/evals/` `web/components/proof/` `web/lib/api/proof.ts` | Stephen | 🟡 | 3.5 | Built and live with validated parsers and 7 tests; shows an honest unavailable state until 3.5 exists |
 | 3.15 | `/break` judge panel streaming chapters live | `web/app/break/` | Stephen | ⬜ | 3.7 | |
 | 3.16 | Live drift strip | `web/components/DriftStrip.tsx` | Stephen | ⬜ | 3.6 | |

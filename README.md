@@ -30,8 +30,7 @@ A run is reported as SUCCESS only after a fresh read of all three apps agrees. E
 ## How the web app is checked
 
 - `.github/workflows/web.yml` runs on every push to `web/`: contract drift check, typecheck, lint, unit tests, production build.
-- `.github/workflows/deployed-smoke.yml` fetches the live site every 30 minutes and on push, and fails unless the page and its assets are really served.
-- `web/tests/e2e/a11y.spec.ts` runs axe (WCAG 2.1 A and AA) against the deployed site on desktop and mobile.
+- `.github/workflows/deployed-smoke.yml` checks the live site on every push to `web/` and every 30 minutes. On a push it waits for the live build to contain that commit, so a stale deployment fails. It then loads every route in a real browser on desktop and phone (`web/tests/e2e/`), failing on an uncaught error, a hydration failure, or a serious or critical axe (WCAG 2.1 A and AA) violation.
 - The browser ledger verifier is tested against hashes computed independently with Python's `hashlib`.
 
 ## Run the web app locally
@@ -55,7 +54,7 @@ BASE_URL=http://localhost:3000 npm run e2e
 ## Repository
 
 - `web/`: Next.js app (App Router, Tailwind 4, GSAP)
-- `backend/`: FastAPI service (in progress)
+- `backend/`: FastAPI service (being built, not in the repository yet)
 - `docs/contracts/api.md`: the API and event-stream contract between the two
 - `PLAN.md`: task status and ownership
 
