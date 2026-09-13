@@ -19,9 +19,36 @@ jobs:
     env:
       SITE: https://pricequorum-web.vercel.app
     steps:
-      - name: Wait for a push-triggered deploy to settle
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      # The site is deployed from the CLI with the commit stamped into the build. On a push, wait a
+      # bounded time for the live build to contain this commit, so a stale deployment fails the run.
+      - name: Live build contains this commit
         if: github.event_name == 'push'
-        run: sleep 90
+        run: |
+          python3 - <<'EOF'
+          import os, re, subprocess, sys, time, urllib.request
+          site, want = os.environ["SITE"], os.environ["GITHUB_SHA"]
+          ua = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0 Safari/537.36"
+          for attempt in range(1, 21):
+              live = None
+              try:
+                  req = urllib.request.Request(site + "/", headers={"User-Agent": ua, "Cache-Control": "no-cache"})
+                  html = urllib.request.urlopen(req, timeout=30).read().decode("utf-8", "ignore")
+                  match = re.search(r'<meta name="pq-build" content="([0-9a-f]{40})"', html)
+                  live = match.group(1) if match else None
+              except Exception as exc:
+                  print(f"attempt {attempt}: fetch failed: {exc}")
+              if live and subprocess.run(["git", "merge-base", "--is-ancestor", want, live], capture_output=True).returncode == 0:
+                  print(f"PASS live build {live} contains {want}")
+                  sys.exit(0)
+              print(f"attempt {attempt}: live build is {live}, waiting for a build containing {want}")
+              time.sleep(30)
+          print(f"FAIL the live site never served a build containing {want}. Deploy from web/ with the commit stamped.")
+          sys.exit(1)
+          EOF
 
       - name: Check the live page and its assets
         run: |
@@ -48,6 +75,8 @@ jobs:
           for asset in ["/textures/marbled-endpaper.webp", "/scenes/ledger-desk.webp"]:
               s, t, b = get(asset)
               results.append((f"{asset} is a webp image", s == 200 and t.startswith("image/webp") and b[:4] == b"RIFF", f"{s} {t}"))
+          s, t, b = get("/opengraph-image")
+          results.append(("link preview is a PNG", s == 200 and b[:8] == b"\x89PNG\r\n\x1a\n", f"{s} {t}"))
 
           failed = 0
           for name, ok, detail in results:
@@ -56,3 +85,23 @@ jobs:
           print(f"{len(results) - failed}/{len(results)} checks passed")
           sys.exit(1 if failed else 0)
           EOF
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install
+        working-directory: web
+        run: npm ci
+
+      - name: Install Chromium
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+
+      # Real browser, desktop and phone: every route runs its JavaScript without an uncaught error
+      # or a hydration failure, and axe finds no serious or critical WCAG 2.1 AA violation.
+      - name: Browser smoke and accessibility
+        working-directory: web
+        run: npm run e2e
