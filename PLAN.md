@@ -152,7 +152,7 @@ Nothing in these lists overlaps. If you need a change in the other lane, write i
 
 **Khadim:** `backend/evals/**` · `backend/monitor/**` · `backend/mcp/**` · `backend/api/routes_sandbox.py` · `backend/api/routes_proof.py` · `backend/tests/evals/**` · `KHADIM_TASKS.md`
 
-**Stephen:** `web/**` · `docs/**` except `docs/contracts/api.md` · `README.md` · `.github/workflows/web.yml` · `.github/workflows/deployed-smoke.yml` · `STEPHEN_TASKS.md` · `.gitignore` · `.env.example`
+**Stephen:** `web/**` · `mobile/**` · `docs/**` except `docs/contracts/api.md` · `README.md` · `.github/workflows/web.yml` · `.github/workflows/deployed-smoke.yml` · `.github/workflows/mobile.yml` · `STEPHEN_TASKS.md` · `.gitignore` · `.env.example`
 
 **Shared (PR + both approve):** `docs/contracts/api.md` · `PLAN.md` status rows (each person edits only their own rows) · `AGENTS.md`
 
@@ -193,6 +193,7 @@ Full definitions: [docs/contracts/api.md](docs/contracts/api.md). Generated sour
 - [ ] **Q1** Submission form URL and video host? Needs whoever attended the opening.
 - [ ] **Q2** Model name for the planner (current GPT-5 class with strict structured outputs). Tylin.
 - [ ] **Q3** Backend host: Railway or Render? Tylin.
+- [ ] **Q4** Contract: which `invariant.result` names must a SUCCESS run report? The web and mobile receipts show Verified only when every received check is complete and passing, but without a required set a run that never sends a check it should have cannot be caught. Proposal: `run.outcome` carries `invariants_expected: string[]`. Tylin, via a contract PR.
 
 ## Risk Register
 
