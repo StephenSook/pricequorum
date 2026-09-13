@@ -9,7 +9,7 @@
 
 | | |
 |---|---|
-| **Demo video (91 s)** | https://pricequorum-web.vercel.app/demo/PriceQuorum_Demo.mp4 |
+| **Demo video (94 s)** | https://pricequorum-web.vercel.app/demo/PriceQuorum_Demo.mp4 |
 | **Live web app** | https://pricequorum-web.vercel.app |
 | **Judge tour** | https://pricequorum-web.vercel.app/judges |
 | **Break it yourself** | https://pricequorum-web.vercel.app/break |
@@ -24,7 +24,7 @@ Built for the Multi-App AI Agent Hackathon (Lemma x Comma Capital), September 13
 
 ## Try it in three minutes
 
-1. **Watch the video** (91 s): https://pricequorum-web.vercel.app/demo/PriceQuorum_Demo.mp4
+1. **Watch the video** (94 s): https://pricequorum-web.vercel.app/demo/PriceQuorum_Demo.mp4
 2. **Open the judge tour:** https://pricequorum-web.vercel.app/judges. Each stop is marked live only after the backend actually answers.
 3. **Ask the backend what it is running and what it can reach:**
    ```
@@ -208,7 +208,7 @@ The live harness ([`backend/evals/run_evals.py`](backend/evals/run_evals.py)) ru
 
 ## 5. Demo video
 
-**91 seconds:** https://pricequorum-web.vercel.app/demo/PriceQuorum_Demo.mp4
+**94 seconds:** https://pricequorum-web.vercel.app/demo/PriceQuorum_Demo.mp4
 
 Narrated in Stephen's own voice (his ElevenLabs voice clone), with two on-camera clips of Stephen made with a HeyGen avatar. The screens are captures of the deployed site and real App Store Connect and CI states; the opening text cards explain the problem. Every spoken line is captioned.
 
