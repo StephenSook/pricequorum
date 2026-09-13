@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const BASE = "https://backend.test";
 const RUN_A = "run-aaaa-0001";
 const RUN_B = "run-bbbb-0002";
-const PROOF = { chain_head: "a".repeat(64), signature: "b".repeat(128), public_key: "c".repeat(64) };
+const PROOF = { chain_head: "a".repeat(64), signature: "b".repeat(128), public_key: "c".repeat(64), invariants_expected: ["prices_agree"] };
 
 type Listener = (message: MessageEvent<string>) => void;
 

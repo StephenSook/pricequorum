@@ -128,6 +128,8 @@ export type RunView = {
     chainHead: string | null;
     signature: string | null;
     publicKey: string | null;
+    /** The exact names of the checks this run must report (contract run.outcome.invariants_expected). */
+    invariantsExpected: string[] | null;
   } | null;
   /** Event types this client does not know. */
   unrecognized: SeenEvent[];
@@ -148,6 +150,12 @@ const bool = (o: Record<string, unknown>, k: string): boolean | null => (typeof 
 const rec = (o: Record<string, unknown>, k: string): Record<string, unknown> => (isRecord(o[k]) ? (o[k] as Record<string, unknown>) : {});
 const outcomeOf = (value: string | null): Outcome | null =>
   value !== null && (OUTCOMES as readonly string[]).includes(value) ? (value as Outcome) : null;
+
+const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|\+00:00)$/;
+/** An ISO 8601 UTC timestamp (contract global rule 3), or null. */
+const isoUtc = (value: string | null): string | null =>
+  value !== null && ISO_UTC.test(value) && !Number.isNaN(Date.parse(value)) ? value : null;
+const nonBlank = (value: string | null): string | null => (value !== null && value.trim() !== "" ? value : null);
 
 /**
  * Contract money: whole minor units and a lowercase ISO 4217 code. Anything else reads as
@@ -199,9 +207,13 @@ export function parseRunOutcome(payload: Record<string, unknown>): RunView["outc
   const publicKey = str(payload, "public_key");
   const remedy = str(payload, "remedy");
   const signed = chainHead !== null && HEX_64.test(chainHead) && signature !== null && HEX_128.test(signature) && publicKey !== null && HEX_64.test(publicKey);
-  if (outcome === "SUCCESS" && !signed) return null;
+  const rawExpected = payload.invariants_expected;
+  const invariantsExpected =
+    Array.isArray(rawExpected) && rawExpected.every((name) => typeof name === "string" && name.trim() !== "") ? (rawExpected as string[]) : null;
+  // A SUCCESS also states which checks it rests on, so a check that was never sent cannot go unnoticed.
+  if (outcome === "SUCCESS" && (!signed || !invariantsExpected || invariantsExpected.length === 0)) return null;
   if (outcome === "REFUSED" && !remedy) return null;
-  return { outcome, remedy, chainHead, signature, publicKey };
+  return { outcome, remedy, chainHead, signature, publicKey, invariantsExpected };
 }
 
 /** True only for a `run.outcome` that passes `parseRunOutcome`. A truncated one does not end a run. */
@@ -365,8 +377,8 @@ export function reduceRun(view: RunView, event: Envelope): RunView {
         app: str(p, "app"),
         ...money(rec(p, "value")),
         rawValue: str(p, "raw_value"),
-        readAt: str(p, "read_at"),
-        sourceId: str(p, "source_id"),
+        readAt: isoUtc(str(p, "read_at")),
+        sourceId: nonBlank(str(p, "source_id")),
         fresh: bool(p, "fresh"),
       };
       return { ...next, readbacks: [...view.readbacks.filter((r) => readback.app === null || r.app !== readback.app), readback] };
@@ -414,6 +426,10 @@ export type Agreement = {
   /** Checks that failed, reported no result, or lack the name or outcome the contract requires. */
   failing: Invariant[];
   invariantsOk: boolean;
+  /** Whether the run has stated its required checks yet. */
+  expectedKnown: boolean;
+  /** Required checks with no complete passing result. */
+  missingChecks: string[];
   value: { minorUnits: number; currency: string } | null;
   /** Every app read back fresh, all values agree, and every check passed. */
   proven: boolean;
@@ -428,10 +444,14 @@ export function agreementOf(view: RunView): Agreement {
   const allPriced = priced.length === RECONCILED_APPS.length;
   const agree = allPriced && priced.every((r) => r.minorUnits === first.minorUnits && r.currency === first.currency);
   const allFresh = readbacks.every((r) => r?.fresh === true && r.readAt !== null && r.sourceId !== null);
-  // The contract does not yet name the required set of checks (PLAN.md open question), so every check
-  // received must be complete and passing, and at least one must exist.
   const failing = view.invariants.filter((i) => i.ok !== true || i.name === null || i.outcome === null);
-  const invariantsOk = view.invariants.length > 0 && failing.length === 0;
+  // The run states which checks it must report (run.outcome.invariants_expected). Every one needs a
+  // complete passing result, and no check outside that list may appear.
+  const expected = view.outcome?.invariantsExpected ?? null;
+  const passed = new Set(view.invariants.filter((i) => i.ok === true && i.outcome !== null && i.name !== null).map((i) => i.name as string));
+  const missingChecks = expected ? expected.filter((name) => !passed.has(name)) : [];
+  const unexpectedChecks = expected ? view.invariants.filter((i) => i.name === null || !expected.includes(i.name)).length : 0;
+  const invariantsOk = view.invariants.length > 0 && failing.length === 0 && expected !== null && missingChecks.length === 0 && unexpectedChecks === 0;
   return {
     readbacks,
     allReported: readbacks.every((r) => r !== undefined),
@@ -440,6 +460,8 @@ export function agreementOf(view: RunView): Agreement {
     allFresh,
     failing,
     invariantsOk,
+    expectedKnown: expected !== null,
+    missingChecks,
     value: agree && first ? { minorUnits: first.minorUnits, currency: first.currency } : null,
     proven: agree && allFresh && invariantsOk,
   };

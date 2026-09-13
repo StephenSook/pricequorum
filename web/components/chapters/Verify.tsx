@@ -34,6 +34,14 @@ export function Verify({ view }: { view: RunView }) {
   } else if (a.failing.length > 0) {
     tone = "bad";
     message = `${a.failing.length} check${a.failing.length === 1 ? "" : "s"} failed or reported no result.`;
+  } else if (a.agree && a.expectedKnown && a.missingChecks.length > 0) {
+    tone = "bad";
+    message = `${a.missingChecks.length} required check${a.missingChecks.length === 1 ? " was" : "s were"} never reported: ${a.missingChecks.join(", ")}.`;
+  } else if (a.agree && a.expectedKnown) {
+    tone = "bad";
+    message = "A check outside the run's required list was reported, so this run cannot be called a success.";
+  } else if (a.agree && view.invariants.length > 0) {
+    message = "The three values agree and every check received passed. Waiting for the run to state which checks were required.";
   } else if (a.agree) {
     message = "The three values agree. Waiting for the invariant checks.";
   }

@@ -13,7 +13,7 @@ import {
 } from "@/lib/api/events";
 
 const RUN = "3f7c1a52-0000-4000-8000-000000000001";
-const PROOF = { chain_head: "a".repeat(64), signature: "b".repeat(128), public_key: "c".repeat(64) };
+const PROOF = { chain_head: "a".repeat(64), signature: "b".repeat(128), public_key: "c".repeat(64), invariants_expected: ["prices_agree"] };
 
 function envelope(seq: number, type: string, payload: Record<string, unknown>): Envelope {
   return { seq, runId: RUN, type, at: "2026-09-13T20:00:00Z", payload };
@@ -53,6 +53,8 @@ describe("isTerminalOutcome", () => {
     expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "NEEDS_HUMAN" }))).toBe(true);
     expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "SUCCESS" }))).toBe(false);
     expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "SUCCESS", ...PROOF, signature: "not-hex" }))).toBe(false);
+    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "SUCCESS", ...PROOF, invariants_expected: [] }))).toBe(false);
+    expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "SUCCESS", ...PROOF, invariants_expected: undefined }))).toBe(false);
     expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "REFUSED" }))).toBe(false);
     expect(isTerminalOutcome(envelope(1, "run.outcome", { outcome: "DONE" }))).toBe(false);
     expect(isTerminalOutcome(envelope(1, "run.status", { outcome: "SUCCESS", ...PROOF }))).toBe(false);
@@ -60,30 +62,42 @@ describe("isTerminalOutcome", () => {
 });
 
 describe("agreementOf", () => {
-  // Contract-complete payloads: ReadbackResult and InvariantResult as docs/contracts/api.md defines them.
+  // Contract-complete payloads: ReadbackResult, InvariantResult and run.outcome as docs/contracts/api.md defines them.
   const readback = (seq: number, app: string, minor: number, extra: Record<string, unknown> = {}) =>
     envelope(seq, "readback.result", { app, value: { minor_units: minor, currency: "usd" }, raw_value: String(minor / 100), fresh: true, read_at: "2026-09-13T20:00:00Z", source_id: `${app}-src`, ...extra });
   const check = (seq: number, extra: Record<string, unknown> = {}) =>
     envelope(seq, "invariant.result", { name: "prices_agree", ok: true, detail: "all three equal", outcome: "SUCCESS", ...extra });
+  const outcome = (seq: number, expected: string[] = ["prices_agree"]) =>
+    envelope(seq, "run.outcome", { outcome: "SUCCESS", ...PROOF, invariants_expected: expected });
   const threeAgree = () => [readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500)];
 
-  it("proves agreement only with three complete fresh equal read-backs and every complete check passing", () => {
-    expect(agreementOf(apply(...threeAgree(), check(4)))).toMatchObject({ proven: true, value: { minorUnits: 2500, currency: "usd" } });
+  it("proves agreement only with three complete fresh equal read-backs and every required check passing", () => {
+    expect(agreementOf(apply(...threeAgree(), check(4), outcome(5)))).toMatchObject({ proven: true, missingChecks: [], value: { minorUnits: 2500, currency: "usd" } });
   });
 
+  // Each negative case carries a complete outcome, so only the defect under test can block the proof.
   it("does not prove agreement with a stale read, a disagreement, a missing app, or no checks", () => {
-    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { fresh: false }), check(9))).proven).toBe(false);
-    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2400), readback(3, "airtable", 2500), check(9))).proven).toBe(false);
-    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), check(9))).proven).toBe(false);
-    expect(agreementOf(apply(...threeAgree())).proven).toBe(false);
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { fresh: false }), check(9), outcome(10))).proven).toBe(false);
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2400), readback(3, "airtable", 2500), check(9), outcome(10))).proven).toBe(false);
+    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), check(9), outcome(10))).proven).toBe(false);
+    expect(agreementOf(apply(...threeAgree(), outcome(10))).proven).toBe(false);
   });
 
-  it("does not prove agreement from incomplete read-backs or checks", () => {
-    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { source_id: null }), check(9))).proven).toBe(false);
-    expect(agreementOf(apply(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { read_at: undefined }), check(9))).proven).toBe(false);
-    expect(agreementOf(apply(...threeAgree(), check(4, { ok: undefined }))).proven).toBe(false);
-    expect(agreementOf(apply(...threeAgree(), check(4, { outcome: undefined }))).proven).toBe(false);
-    expect(agreementOf(apply(...threeAgree(), check(4, { name: undefined }))).proven).toBe(false);
+  it("does not prove agreement from incomplete or malformed read-backs or checks", () => {
+    const provenWith = (...events: Envelope[]) => agreementOf(apply(...events, outcome(20))).proven;
+    expect(provenWith(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { source_id: null }), check(9))).toBe(false);
+    expect(provenWith(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { source_id: "  " }), check(9))).toBe(false);
+    expect(provenWith(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { read_at: undefined }), check(9))).toBe(false);
+    expect(provenWith(readback(1, "stripe", 2500), readback(2, "notion", 2500), readback(3, "airtable", 2500, { read_at: "not-a-time" }), check(9))).toBe(false);
+    expect(provenWith(...threeAgree(), check(4, { ok: undefined }))).toBe(false);
+    expect(provenWith(...threeAgree(), check(4, { outcome: undefined }))).toBe(false);
+    expect(provenWith(...threeAgree(), check(4, { name: undefined }))).toBe(false);
+  });
+
+  it("requires exactly the checks the run said it must report", () => {
+    expect(agreementOf(apply(...threeAgree(), check(4)))).toMatchObject({ proven: false, expectedKnown: false });
+    expect(agreementOf(apply(...threeAgree(), check(4), outcome(5, ["prices_agree", "old_price_archived"])))).toMatchObject({ proven: false, missingChecks: ["old_price_archived"] });
+    expect(agreementOf(apply(...threeAgree(), check(4), check(5, { name: "surprise_check" }), outcome(6)))).toMatchObject({ proven: false, missingChecks: [] });
   });
 });
 
